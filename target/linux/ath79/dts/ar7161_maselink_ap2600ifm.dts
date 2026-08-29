@@ -3,9 +3,9 @@
 /*
  * MASELinK AP2600IFM (AR7161)
  *
- * 基于官方 OpenWrt master 的 ar7161_aruba_ap-175.dts 改造，
- * 硬件参数源自 mach-maselink-ap2600ifm.c（作者 Weijie Gao）。
- * 本机无 AP-175 的 i2c 扩展模块（i2c0/i2c-gpio 已删除）。
+ * 基于官方 OpenWrt master 的 ar7161_aruba_ap-175.dts 改造,
+ * 硬件参数源自 mach-maselink-ap2600ifm.c(作者 Weijie Gao)。
+ * 本机无 AP-175 的 i2c 扩展模块(i2c0/i2c-gpio 已删除)。
  */
 
 #include "ar7100.dtsi"
@@ -30,6 +30,17 @@
 	memory@0 {
 		device_type = "memory";
 		reg = <0x0 0x04000000>;
+	};
+
+	/*
+	 * 独立 MDIO syscon:仅覆盖 MDIO/MII 寄存器区(0x19000000),
+	 * 不带 resets 属性。mdio0 通过 regmap 指向该节点后,
+	 * 不会再触发 of_syscon_register(eth0) 去独占获取 reset#9,
+	 * 从而消除与 ag71xx 主驱动之间的 -EBUSY 冲突。
+	 */
+	mdio_syscon: mdio-syscon@19000000 {
+		compatible = "syscon";
+		reg = <0x19000000 0x200>;
 	};
 
 	leds {
@@ -80,7 +91,7 @@
 &pcie0 {
 	status = "okay";
 
-	/* MAC 待 bootloader 路线确定后从 hwinfo@0x1c 启用，方案（注释保留）：
+	/* MAC 待 bootloader 路线确定后从 hwinfo@0x1c 启用,方案(注释保留):
 	 * nvmem-cells = <&macaddr_hwinfo_1c>;
 	 * nvmem-cell-names = "mac-address";
 	 * mac-address-increment = <1>;
@@ -103,9 +114,15 @@
 &mdio0 {
 	status = "okay";
 
-	/* PHY 为 IC+ IP1001，首选 MDIO 地址 20 (0x14)（源自
-	 * mach-maselink-ap2600ifm.c 的 phy_mask = BIT(20)）。
-	 * 若实测不通，改为官方 AP-175 板值 @1（reg 与下方 phy-handle 同步改）。
+	/*
+	 * regmap 指向独立 mdio_syscon(不带 resets),
+	 * 避免解析 eth0 时和 ag71xx 主驱动抢 reset#9 触发 -EBUSY。
+	 */
+	regmap = <&mdio_syscon>;
+
+	/* PHY 为 IC+ IP1001,首选 MDIO 地址 20 (0x14)(源自
+	 * mach-maselink-ap2600ifm.c 的 phy_mask = BIT(20))。
+	 * 若实测不通,改为官方 AP-175 板值 @1(reg 与下方 phy-handle 同步改)。
 	 */
 	phy14: ethernet-phy@14 {
 		reg = <0x14>;
@@ -115,7 +132,7 @@
 &eth0 {
 	status = "okay";
 
-	/* 与 ar7100.dtsi 默认值相同，显式声明以文档化 */
+	/* 与 ar7100.dtsi 默认值相同,显式声明以文档化 */
 	pll-data = <0x00110000 0x00001099 0x00991099>;
 
 	phy-mode = "rgmii";
