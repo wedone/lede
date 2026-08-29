@@ -1516,6 +1516,21 @@ define Device/librerouter_librerouter-v1
 endef
 TARGET_DEVICES += librerouter_librerouter-v1
 
+define Device/maselink_ap2600ifm
+  SOC := ar7161
+  DEVICE_VENDOR := MASELinK
+  DEVICE_MODEL := AP2600IFM
+  IMAGE_SIZE := 16000k
+  DEVICE_PACKAGES := kmod-usb2
+  LOADER_TYPE := bin
+  LOADER_FLASH_OFFS := 0x42000
+  COMPILE := loader-$(1).bin
+  COMPILE/loader-$(1).bin := loader-okli-compile
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128 | uImage none
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+endef
+TARGET_DEVICES += maselink_ap2600ifm
+
 define Device/meraki_mr12
   SOC := ar7242
   DEVICE_VENDOR := Meraki

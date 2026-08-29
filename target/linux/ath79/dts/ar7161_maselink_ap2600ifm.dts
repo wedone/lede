@@ -1,0 +1,175 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+
+/*
+ * MASELinK AP2600IFM (AR7161)
+ *
+ * 基于官方 OpenWrt master 的 ar7161_aruba_ap-175.dts 改造，
+ * 硬件参数源自 mach-maselink-ap2600ifm.c（作者 Weijie Gao）。
+ * 本机无 AP-175 的 i2c 扩展模块（i2c0/i2c-gpio 已删除）。
+ */
+
+#include "ar7100.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+
+/ {
+	compatible = "maselink,ap2600ifm", "qca,ar7161";
+	model = "MASELinK AP2600IFM";
+
+	chosen {
+		bootargs = "console=ttyS0,115200 mem=64M";
+	};
+
+	aliases {
+		led-boot = &led_d24;
+		led-failsafe = &led_d24;
+		led-upgrade = &led_d24;
+	};
+
+	memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x04000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_d24: d24 {
+			label = "green:d24";
+			gpios = <&gpio 0 GPIO_ACTIVE_LOW>;
+		};
+
+		rf1 {
+			label = "green:rf1";
+			gpios = <&gpio 2 GPIO_ACTIVE_LOW>;
+		};
+
+		d24top {
+			label = "green:d24top";
+			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+		};
+
+		rf2 {
+			label = "green:rf2";
+			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+		};
+
+		rf2top {
+			label = "green:rf2top";
+			gpios = <&gpio 5 GPIO_ACTIVE_LOW>;
+		};
+
+		rf1top {
+			label = "green:rf1top";
+			gpios = <&gpio 7 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		reset {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&gpio 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&pcie0 {
+	status = "okay";
+
+	/* MAC 待 bootloader 路线确定后从 hwinfo@0x1c 启用，方案（注释保留）：
+	 * nvmem-cells = <&macaddr_hwinfo_1c>;
+	 * nvmem-cell-names = "mac-address";
+	 * mac-address-increment = <1>;
+	 */
+	wifi@11,0 {
+		compatible = "pci168c,0029";
+		reg = <0x8800 0 0 0 0>;
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+
+	wifi@12,0 {
+		compatible = "pci168c,0029";
+		reg = <0x9000 0 0 0 0>;
+		#gpio-cells = <2>;
+		gpio-controller;
+	};
+};
+
+&mdio0 {
+	status = "okay";
+
+	/* PHY 为 IC+ IP1001，首选 MDIO 地址 20 (0x14)（源自
+	 * mach-maselink-ap2600ifm.c 的 phy_mask = BIT(20)）。
+	 * 若实测不通，改为官方 AP-175 板值 @1（reg 与下方 phy-handle 同步改）。
+	 */
+	phy14: ethernet-phy@14 {
+		reg = <0x14>;
+	};
+};
+
+&eth0 {
+	status = "okay";
+
+	/* 与 ar7100.dtsi 默认值相同，显式声明以文档化 */
+	pll-data = <0x00110000 0x00001099 0x00991099>;
+
+	phy-mode = "rgmii";
+	phy-handle = <&phy14>;
+};
+
+&spi {
+	status = "okay";
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <25000000>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "firmware";
+				reg = <0x40000 0xfa0000>;
+				compatible = "denx,uimage";
+			};
+
+			hwinfo: partition@fe0000 {
+				label = "hwinfo";
+				reg = <0xfe0000 0x10000>;
+				read-only;
+
+				nvmem-layout {
+					compatible = "fixed-layout";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					macaddr_hwinfo_1c: macaddr@1c {
+						compatible = "mac-base";
+						reg = <0x1c 0x6>;
+						#nvmem-cell-cells = <1>;
+					};
+				};
+			};
+
+			partition@ff0000 {
+				label = "u-boot-env";
+				reg = <0xff0000 0x10000>;
+				read-only;
+			};
+		};
+	};
+};

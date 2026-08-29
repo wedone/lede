@@ -1,0 +1,80 @@
+# MASELinK AP2600IFM ath79 单设备构建
+# 触发：push 到 ap2600 分支或手动 workflow_dispatch
+name: Build AP2600IFM
+
+on:
+  push:
+    branches:
+      - ap2600
+    paths:
+      - 'target/linux/ath79/**'
+      - '.github/workflows/build-ap2600ifm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build maselink_ap2600ifm
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo -E apt update
+          sudo -E apt -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
+
+      - name: Update feeds
+        run: |
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Configure target
+        run: |
+          cat > .config <<'EOF'
+          CONFIG_TARGET_ath79=y
+          CONFIG_TARGET_ath79_generic=y
+          CONFIG_TARGET_ath79_generic_DEVICE_maselink_ap2600ifm=y
+          EOF
+          make defconfig
+          grep -E 'CONFIG_TARGET_ath79_generic_DEVICE_maselink' .config
+
+      - name: Download
+        run: make download -j$(nproc)
+
+      - name: Compile
+        env:
+          FORCE_UNSAFE_CONFIGURE: '1'
+        run: |
+          make -j$(nproc) IGNORE_ERRORS=m || make -j1 IGNORE_ERRORS=m V=s
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ap2600ifm-firmware
+          path: bin/targets/ath79/generic/
+
+      - name: Upload failure logs (on error)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ap2600ifm-failure-logs
+          path: |
+            logs/
+            build_dir/logs/
