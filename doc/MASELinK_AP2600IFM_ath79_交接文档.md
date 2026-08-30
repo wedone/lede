@@ -77,3 +77,43 @@ RedBoot> go
 - 硬件参数**唯一权威**是旧 `mach-maselink-ap2600ifm.c`（作者 Weijie Gao = Breed 作者）；**严禁参考 aruba_ap-105**（硬件无关）
 - Web 访问 GitHub Actions：https://github.com/wedone/lede/actions（需登录 wedone 账号，或直接用 `gh` CLI）
 - 重新构建触发方式：改代码后 `git push origin ap2600`，或 web 端 workflow_dispatch
+
+## 八、真机实测进展（2026-08-30，已接管串口 COM4@115200）
+
+### 8.1 当前可运行状态
+- **Breed (breed-ar7161-blank, r1416) → 自定义 ath79 OpenWrt 24.10.5 / 6.6.152 已成功启动**
+- 分区（登录后 `/proc/mtd`）：`u-boot/firmware/kernel/rootfs/rootfs_data/hwinfo/u-boot-env`
+- **WiFi(AR9280) 正常**，`br-lan=192.168.1.1`，可通过 WiFi 管理
+- 遗留：**eth0 网口未通**
+
+### 8.2 eth0 PHY 起不来的根因（已从串口 WARNING 栈精确定位）
+- 现象：`ag71xx-legacy-mdio: probe of 19000000.eth:mdio failed with error -16`
+  `ag71xx-legacy 19000000.eth: Could not connect to PHY device. Deferring probe.`
+- 调用栈：`ag71xx_mdio_probe → device_node_get_regmap → of_syscon_register → __of_reset_control_get`
+  WARNING 在 `drivers/reset/core.c:766 __reset_control_get_internal`
+- 根因：mdio0 在 `ath79.dtsi` 用 `regmap = <&eth0>`，mdio 驱动把 eth0 当 syscon 解析时，
+  `of_syscon_register` 会对 eth0 的 `resets`(reset#9 mac) 再做一个 **exclusive get**；
+  而 ag71xx 主驱动已在 `ag71xx_main.c` 用 `devm_reset_control_get_exclusive("mac")` **独占**了同一条
+  reset → 返回 `-EBUSY` → mdio 总线注册失败 → eth0 连不上 PHY。
+- **修复（已提交触发 GitHub Actions）**：新增不带 resets 的独立节点 `mdio_syscon@19000000`
+  （`ar7161_maselink_ap2600ifm.dts` 根下，reg=0x19000000 0x200），并让 `&mdio0 { regmap = <&mdio_syscon>; }`，
+  使 mdio 不再触发 eth0 的 reset 独占解析。commit `84dd19db`（ap2600 分支）。
+
+### 8.3 固件参数（Breed WebUI 直接刷机可行性依据）
+- 当前 `openwrt-ath79-generic-maselink_ap2600ifm-squashfs-sysupgrade.bin` 头部：
+  `magic=0x27051956(uImage), load=0x80060000, entry=0x80060000, name=ux-6.6.152`
+- 已满足 Breed 识别 OpenWrt 的核心条件（固件以 uImage 开头 + kernel loadaddr=0x80060000 匹配 AR7161）
+- **待专项**：进 Breed 后对齐其内置 firmware 分区设定（`boot flash 0x40000` 与默认 boot 变量），
+  验证 WebUI“常规固件”能否一键刷；若否，需核对 Breed blank 版内置分区/启动参数并做相应适配。
+
+### 8.4 loader 搜索偏移（OKLI 头位置）实测结论
+- 现象：固件用 `loader-okli`（ath79 内嵌 lzma-loader）引导，loader 内 `CONFIG_FLASH_OFFS`
+  决定从 flash 哪个偏移、按 0x1000 步进搜索 `OKLI` 内核头（`loader.c: lzma_init_data`）。
+  若偏移不对会“Looking for OpenWrt image... not found”或命中旧布局残留 magic 导致 decompression failed。
+- 根因：改 `generic.mk` 的 `LOADER_FLASH_OFFS` 后，GitHub Actions 增量编译缓存未重编 loader，
+  真机仍用旧偏移 0x42000 搜索。
+- **实测钉死偏移**：扫描 dl3 固件 `sysupgrade.bin` 大端 magic `0x4f4b4c49`，唯一命中在 **bin 偏移 0x2000**，
+  对应 flash **0x52000**（firmware 起点 0x50000 + loader 段 0x1FC0 + 外层 uImage 头 0x40）。
+- **修复（本次待提交）**：`generic.mk LOADER_FLASH_OFFS=0x52000`（已改）+ `config.h` 中
+  `#define CONFIG_FLASH_OFFS 0x52000` 作硬编码兜底（受 `#ifndef` 保护，命令行 `-D` 优先），
+  + workflow 强制清理 lzma-loader 缓存（`make target/linux/clean`、删 build_dir 下 lzma-loader）确保重编。

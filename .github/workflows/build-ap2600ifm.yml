@@ -56,8 +56,13 @@ jobs:
           grep -E 'CONFIG_TARGET_ath79_generic_DEVICE_maselink' .config
 
       - name: Download
-        run: make download -j$(nproc)
-
+        run: |
+          make download -j$(nproc)
+          # 强制清理 lzma-loader 编译缓存，确保 LOADER_FLASH_OFFS 改动真正生效
+          make target/linux/clean || true
+          rm -rf build_dir/target-*/*/lzma-loader build_dir/target-*/linux-ath79*lzma-loader
+          rm -rf build_dir/target-mips*/linux-ath79_generic/loader-stamp
+ 
       - name: Compile
         env:
           FORCE_UNSAFE_CONFIGURE: '1'

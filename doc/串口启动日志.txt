@@ -1,0 +1,163 @@
+Ethernet eth0: MAC address 00:03:7f:ff:ff:fe
+IP: 0.0.0.0/255.255.255.0, Gateway: 0.0.0.0
+Default server: 0.0.0.0
+
+RedBoot(tm) bootstrap and debug environment [ROMRAM]
+Non-certified release, version UNKNOWN - built 14:21:45, Mar 27 2010
+
+Copyright (C) 2000, 2001, 2002, 2003, 2004 Red Hat, Inc.
+
+Board: pb44
+RAM: 0x80000000-0x84000000, [0x800511f0-0x80fe1000] available
+FLASH: 0xbf000000 - 0xc0000000, 256 blocks of 0x00010000 bytes each.
+== start led2 on
+== Executing boot script in 3.000 seconds - enter ^C to abort
+RedBoot> fis load -l kernel
+Image loaded from 0x80060000-0x802e9418
+config Image loaded from 0xbffe0000-0xbfff0000
+RedBoot> exec -c "console=ttyS0,115200 mem=64M"
+Now booting linux kernel:
+ Base address 0x80050000 Entry 0x80060000
+ Cmdline : console=ttyS0,115200 mem=64M
+[    0.000000] Linux version 2.6.39.4 (kaka@kaka-ubuntu) (gcc version 4.5.4 20110808 (prerelease) (Linaro GCC 4.5-2011.08) ) #1 Thu Jan 5 20:35:23 CST 2012
+[    0.000000] bootconsole [early0] enabled
+[    0.000000] CPU revision is: 00019374 (MIPS 24Kc)
+[    0.000000] SoC: Atheros AR7161 rev 2
+[    0.000000] Clocks: CPU:680.000MHz, DDR:340.000MHz, AHB:170.000MHz, Ref:40.000MHz
+[    0.000000] Determined physical RAM map:
+[    0.000000]  memory: 04000000 @ 00000000 (usable)
+[    0.000000] Initrd not found or empty - disabling initrd
+[    0.000000] Zone PFN ranges:
+[    0.000000]   Normal   0x00000000 -> 0x00004000
+[    0.000000] Movable zone start PFN for each node
+[    0.000000] early_node_map[1] active PFN ranges
+[    0.000000]     0: 0x00000000 -> 0x00004000
+[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 16256
+[    0.000000] Kernel command line:  board=AP2600I console=ttyS0,115200 ethaddr=00.03.7f.ff.ff.fe rootfstype=squashfs,jffs2 noinitrd
+[    0.000000] PID hash table entries: 256 (order: -2, 1024 bytes)
+[    0.000000] Dentry cache hash table entries: 8192 (order: 3, 32768 bytes)
+[    0.000000] Inode-cache hash table entries: 4096 (order: 2, 16384 bytes)
+[    0.000000] Primary instruction cache 64kB, VIPT, 4-way, linesize 32 bytes.
+[    0.000000] Primary data cache 32kB, 4-way, VIPT, cache aliases, linesize 32 bytes
+[    0.000000] Writing ErrCtl register=0003e002
+[    0.000000] Readback ErrCtl register=0003e002
+[    0.000000] Memory: 61840k/65536k available (2018k kernel code, 3696k reserved, 389k data, 188k init, 0k highmem)
+[    0.000000] SLUB: Genslabs=9, HWalign=32, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] NR_IRQS:80
+[    0.000000] Calibrating delay loop... 452.19 BogoMIPS (lpj=2260992)
+[    0.060000] pid_max: default: 32768 minimum: 301
+[    0.060000] Mount-cache hash table entries: 512
+[    0.070000] NET: Registered protocol family 16
+[    0.070000] MIPS: machine is maselink ap2600i
+[    0.570000] registering PCI controller with io_map_base unset
+[    0.580000] bio: create slab <bio-0> at 0
+[    0.580000] pci 0000:00:11.0: BAR 0: assigned [mem 0x10000000-0x1000ffff]
+[    0.590000] pci 0000:00:11.0: BAR 0: set to [mem 0x10000000-0x1000ffff] (PCI address [0x10000000-0x1000ffff])
+[    0.590000] pci 0000:00:12.0: BAR 0: assigned [mem 0x10010000-0x1001ffff]
+[    0.600000] pci 0000:00:12.0: BAR 0: set to [mem 0x10010000-0x1001ffff] (PCI address [0x10010000-0x1001ffff])
+[    0.600000] PCI: mapping irq 72 to pin1@0000:00:11.0
+[    0.610000] PCI: mapping irq 73 to pin1@0000:00:12.0
+[    0.610000] Switching to clocksource MIPS
+[    0.620000] NET: Registered protocol family 2
+[    0.620000] IP route cache hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.620000] TCP established hash table entries: 2048 (order: 2, 16384 bytes)
+[    0.630000] TCP bind hash table entries: 2048 (order: 1, 8192 bytes)
+[    0.630000] TCP: Hash tables configured (established 2048 bind 2048)
+[    0.640000] TCP reno registered
+[    0.640000] UDP hash table entries: 256 (order: 0, 4096 bytes)
+[    0.650000] UDP-Lite hash table entries: 256 (order: 0, 4096 bytes)
+[    0.650000] NET: Registered protocol family 1
+[    0.670000] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    0.670000] JFFS2 version 2.2 (NAND) (SUMMARY) (LZMA) (RTIME) (CMODE_PRIORITY) (c) 2001-2006 Red Hat, Inc.
+[    0.680000] msgmni has been set to 120
+[    0.690000] io scheduler noop registered
+[    0.690000] io scheduler deadline registered (default)
+[    0.700000] Serial: 8250/16550 driver, 1 ports, IRQ sharing disabled
+[    0.720000] serial8250.0: ttyS0 at MMIO 0x18020000 (irq = 11) is a 16550A
+[    0.730000] console [ttyS0] enabled, bootconsole disabled
+[    0.730000] console [ttyS0] enabled, bootconsole disabled
+[    0.740000] Atheros AR71xx SPI Controller driver version 0.2.4
+[    0.750000] m25p80 spi0.0: found s25sl12801, expected m25p80
+[    0.750000] m25p80 spi0.0: s25sl12801 (16384 Kbytes)
+[    0.760000] Searching for RedBoot partition table in spi0.0 at offset 0xfe0000
+[    0.850000] Searching for RedBoot partition table in spi0.0 at offset 0xff0000
+[    0.940000] 7 RedBoot partitions found on MTD device spi0.0
+[    0.950000] Creating 7 MTD partitions on "spi0.0":
+[    0.950000] 0x000000000000-0x000000040000 : "RedBoot"
+[    0.960000] 0x000000040000-0x000000160000 : "kernel"
+[    0.960000] 0x000000160000-0x000000f60000 : "rootfs"
+[    0.970000] mtd: partition "rootfs" set to be root filesystem
+[    0.980000] mtd: partition "rootfs_data" created automatically, ofs=330000, len=C30000
+[    0.980000] 0x000000330000-0x000000f60000 : "rootfs_data"
+[    0.990000] 0x000000f60000-0x000000fe0000 : "config"
+[    1.000000] 0x000000fe0000-0x000000ff0000 : "board-config"
+[    1.000000] 0x000000ff0000-0x000000fff000 : "FIS directory"
+[    1.010000] 0x000000fff000-0x000001000000 : "RedBoot config"
+[    1.020000] ag71xx_mdio: probed
+[    1.020000] eth0: Atheros AG71xx at 0xb9000000, irq 4
+[    1.330000] Atheros AR71xx hardware watchdog driver version 0.1.0
+[    1.340000] TCP westwood registered
+[    1.340000] NET: Registered protocol family 17
+[    1.340000] 802.1Q VLAN Support v1.8 Ben Greear <greearb@candelatech.com>
+[    1.350000] All bugs added by David S. Miller <davem@redhat.com>
+[    1.360000] VFS: Mounted root (squashfs filesystem) readonly on device 31:2.
+[    1.370000] Freeing unused kernel memory: 188k freed
+[    3.440000] Button Hotplug driver version 0.4.1
+- preinit -
+Press the [f] key and hit [enter] to enter failsafe mode
+- regular preinit -
+[    6.940000] JFFS2 notice: (394) jffs2_build_xattr_subsystem: complete building xattr subsystem, 1 of xdatum (0 unchecked, 0 orphan) and 12 of xref (0 dead, 2 orphan) found.
+switching to jffs2
+- init -
+
+Please press Enter to activate this console. [    8.340000] Compat-wireless backport release: compat-wireless-2011-11-29
+[    8.350000] Backport based on wireless-testing.git master-2011-12-01
+[    8.430000] cfg80211: Calling CRDA to update world regulatory domain
+[    8.650000] cfg80211: World regulatory domain updated:
+[    8.650000] cfg80211:     (start_freq - end_freq @ bandwidth), (max_antenna_gain, max_eirp)
+[    8.660000] cfg80211:     (2402000 KHz - 2472000 KHz @ 40000 KHz), (300 mBi, 2000 mBm)
+[    8.670000] cfg80211:     (2457000 KHz - 2482000 KHz @ 20000 KHz), (300 mBi, 2000 mBm)
+[    8.680000] cfg80211:     (2474000 KHz - 2494000 KHz @ 20000 KHz), (300 mBi, 2000 mBm)
+[    8.690000] cfg80211:     (5170000 KHz - 5250000 KHz @ 40000 KHz), (300 mBi, 2000 mBm)
+[    8.690000] cfg80211:     (5735000 KHz - 5835000 KHz @ 40000 KHz), (300 mBi, 2000 mBm)
+[    8.910000] SCSI subsystem initialized
+[    9.060000] usbcore: registered new interface driver usbfs
+[    9.070000] usbcore: registered new interface driver hub
+[    9.080000] usbcore: registered new device driver usb
+[    9.830000] PCI: Enabling device 0000:00:11.0 (0000 -> 0002)
+[   10.630000] ieee80211 phy0: Atheros AR9280 Rev:2 mem=0xb0000000, irq=72
+[   10.640000] cfg80211: Calling CRDA for country: US
+[   10.760000] PPP generic driver version 2.4.2
+[   10.810000] cfg80211: Regulatory domain changed to country: US
+[   10.820000] cfg80211:     (start_freq - end_freq @ bandwidth), (max_antenna_gain, max_eirp)
+[   10.830000] cfg80211:     (2402000 KHz - 2472000 KHz @ 40000 KHz), (300 mBi, 2700 mBm)
+[   10.840000] cfg80211:     (5170000 KHz - 5250000 KHz @ 40000 KHz), (300 mBi, 1700 mBm)
+[   10.840000] cfg80211:     (5250000 KHz - 5330000 KHz @ 40000 KHz), (300 mBi, 2000 mBm)
+[   10.850000] cfg80211:     (5490000 KHz - 5600000 KHz @ 40000 KHz), (300 mBi, 2000 mBm)
+[   10.860000] cfg80211:     (5650000 KHz - 5710000 KHz @ 40000 KHz), (300 mBi, 2000 mBm)
+[   10.870000] cfg80211:     (5735000 KHz - 5835000 KHz @ 40000 KHz), (300 mBi, 3000 mBm)
+[   10.900000] ip_tables: (C) 2000-2006 Netfilter Core Team
+[   11.000000] NET: Registered protocol family 24
+[   11.160000] nf_conntrack version 0.5.0 (969 buckets, 3876 max)
+[   12.330000] device eth0 entered promiscuous mode
+
+
+
+BusyBox v1.19.3 (2012-01-05 20:27:34 CST) built-in shell (ash)
+Enter 'help' for a list of built-in commands.
+
+  _______                     ________        __
+ |       |.-----.-----.-----.|  |  |  |.----.|  |_
+ |   -   ||  _  |  -__|     ||  |  |  ||   _||   _|
+ |_______||   __|_____|__|__||________||__|  |____|
+          |__| W I R E L E S S   F R E E D O M
+ ATTITUDE ADJUSTMENT (bleeding edge, r29637) ----------
+  * 1/4 oz Vodka      Pour all ingredients into mixing
+  * 1/4 oz Gin        tin with ice, strain into glass.
+  * 1/4 oz Amaretto
+  * 1/4 oz Triple sec
+  * 1/4 oz Peach schnapps
+  * 1/4 oz Sour mix
+  * 1 splash Cranberry juice
+ -----------------------------------------------------
+root@OpenWrt:/#
