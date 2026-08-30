@@ -1,0 +1,47 @@
+name: Diagnose ath9k 513 patch
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    name: Simulate OpenWrt patch order on backports-6.6.15
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply patches in OpenWrt order until 513, print result
+        run: |
+          curl -fsSL -o /tmp/backports-6.6.15.tar.xz \
+            http://mirror2.openwrt.org/sources/backports-6.6.15.tar.xz
+          tar -C /tmp -xf /tmp/backports-6.6.15.tar.xz
+          cd /tmp/backports-6.6.15
+          echo "=== pci.c line count ==="
+          wc -l drivers/net/wireless/ath/ath9k/pci.c
+          echo "=== pci.c tail (table end) ==="
+          sed -n '755,790p' drivers/net/wireless/ath/ath9k/pci.c
+          found=0
+          while IFS= read -r p; do
+            rel="${p#*/mac80211/patches/}"
+            if [[ "$rel" == *"513-ath9k_add_pci_ids.patch" ]]; then
+              echo "=== APPLYING 513: $rel ==="
+              found=1
+              if patch -p1 < "$p"; then
+                echo "513 OK"
+              else
+                echo "513 FAILED"
+                echo "--- pci.c.rej ---"
+                cat drivers/net/wireless/ath/ath9k/pci.c.rej 2>/dev/null || true
+                echo "--- pci.c tail after failed attempt ---"
+                sed -n '755,800p' drivers/net/wireless/ath/ath9k/pci.c
+                exit 1
+              fi
+              break
+            fi
+            # ignore build/ patches: per dict-order they come after ath9k/
+            if [[ "$rel" == build/* ]]; then continue; fi
+            patch -p1 --forward -s < "$p" || echo "  (ignored/skipped): $rel"
+          done < <(find "$GITHUB_WORKSPACE/package/kernel/mac80211/patches" -name '*.patch' | sort)
+          [ "$found" = "1" ] || { echo "513 patch entry not found in loop"; exit 1; }
+          echo "=== FINAL pci.c table region ==="
+          sed -n '760,805p' drivers/net/wireless/ath/ath9k/pci.c
