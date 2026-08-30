@@ -1522,12 +1522,11 @@ define Device/maselink_ap2600ifm
   DEVICE_MODEL := AP2600IFM
   IMAGE_SIZE := 15872k
   DEVICE_PACKAGES := kmod-usb2
-  LOADER_TYPE := bin
-  LOADER_FLASH_OFFS := 0x52000
-  COMPILE := loader-$(1).bin
-  COMPILE/loader-$(1).bin := loader-okli-compile
-  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128 | uImage none
-  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | loader-kernel | uImage none
+  # 引导：Breed (ATH-SDK-16MB 布局, 固件 0x50000 起)。
+  # 回落 ath79 默认 KERNEL (kernel-bin | append-dtb | lzma | uImage lzma),
+  # 即标准 uImage (magic 0x27051956, load 0x80060000)。Breed 自带 LZMA 解压,
+  # 直接识别标准 uImage 引导, 无需 OKLI / CONFIG_FLASH_OFFS --- 那套是为
+  # Aruba 原厂 APBoot 准备的, 与 Breed 无关, 反而引入 flash 偏移适配易错点。
 endef
 TARGET_DEVICES += maselink_ap2600ifm
 
