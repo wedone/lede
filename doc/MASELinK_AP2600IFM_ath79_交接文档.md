@@ -7,7 +7,27 @@
 
 ---
 
-## 一、任务状态总览（截至 2026-08-29）
+## ★ 当前状态（2026-08-30，Breed 阶段）— 以下为准，旧 OKLI 思路已过时
+
+**设备实物进展**：已刷入 **Breed**（`breed-ar7161-blank.bin`，见 `doc/breed.md`）。
+
+**关键决策（第一性原理重新确认，含代码 commit `66f57dd72`）**：
+
+| 主题 | 结论 |
+|------|------|
+| **引导格式** | 用 **标准 uImage**（`kernel-bin \| append-dtb \| lzma \| uImage lzma`）。Breed 自带 LZMA 解压、原生认 uImage magic `0x27051956`、按 header 的 `0x80060000` 加载。**彻底去掉 OKLI**（`0x4f4b4c49` / `loader-okli` / `CONFIG_FLASH_OFFS`）——OKLI 只为 Aruba 原厂 APBoot 存在，与 Breed 无关，且其"从 flash 绝对偏移读内核"正是引导卡死的根源。 |
+| **flash 布局** | 对齐 **Breed ATH-SDK-16MB**：u-boot `0x0–0x50000`、firmware `0x50000` 起、`IMAGE_SIZE=15872k`。Breed WebUI 选 ATH-SDK-16MB 布局可直接直刷 sysupgrade，autoboot 从 `0x50000` 引导。 |
+| **PHY 地址** | Breed mdio 实测 = **@1**（IP1001，PHY ID `0x02430d91`），地址 20 无响应。已改 DTS（与官方 AP-175 的 @1 一致）。 |
+| **mdio/eth0 冲突** | 独立 `mdio_syscon@19000000`（不带 resets），消除 -EBUSY。 |
+| **MAC** | 仍**未启用**（DTS 注释保留 hwinfo@0x1c 方案），等引导跑通后再定。 |
+
+> **旧文档警示**：`迁移开发文档_v4.md` 的"OKLI loader / RedBoot TFTP 验证"路线仅适用于换回 Aruba APBoot 的场景。**当前已上 Breed，一律以本表为准。**
+
+**GitHub Actions**：当前分支 `ap2600`。最新 run 见 `gh run list --repo wedone/lede`。
+
+---
+
+## 一、任务状态总览（截至 2026-08-29，OKLI 时代的归档记录，仅供参考）
 
 | 阶段 | 状态 |
 |------|------|
