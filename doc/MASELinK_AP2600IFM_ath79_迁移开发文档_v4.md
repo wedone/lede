@@ -359,23 +359,23 @@ TARGET_DEVICES += maselink_ap2600ifm
 5. **无线卡身份实测**：2.4G=AR9223（`168c:0029/2091`）、5G=AR9220（`028c:0029/2096`，vendor 被 OEM 改写）
 6. **ath9k 补丁**：`package/kernel/mac80211/patches*/ath9k/513-ath9k_add_pci_ids.patch` 表尾新增 `PCI_DEVICE_SUB(0x028c, 0x0029, 0x028c, 0x2096)`（§2.5）
 
-### Phase 1：编译验证 5G 无线（当前）
+### Phase 1：编译验证 5G 无线（已完成，2026-08-31 实测定论）
 
-1. 重新编译固件（含补丁 `513-ath9k_add_pci_ids.patch`）
-2. 经 Breed Web/TFTP 刷入 `firmware` 分区（ATH-SDK-16MB 布局），串口验证启动
-3. 验证清单：
+1. **编译**：GitHub Action 触发成功（Run #33336285638，52m7s），产物含 `513-ath9k_add_pci_ids.patch`，刷入 `firmware` 分区（ATH-SDK-16MB 布局）后串口验证启动正常
 
-   * [ ] 串口(115200)正常，进入 shell
+2. **验证结果**（dl6 与 dl7 两次独立编译产物烧录测试一致）：
 
-   * [ ] `iw list` 显示 **phy0 + phy1** 两块无线；`dmesg | grep -i ath9k` 显示 **0000:00:12.0（5G，0x028c:0029）已绑定驱动**、IRQ 非 0
+   * [x] 串口(115200)正常，进入 shell
 
-   * [ ] 5G 卡（AR9220）创建 AP 实测正常；2.4G（AR9223）回归正常
+   * [x] `dmesg` 显示 **0000:00:12.0（5G，0x028c:0029）已被 ath9k 识别并** **`enabling device`**（补丁生效）；但随即 `Couldn't reset chip` → `Unable to initialize hardware; initialization status: -5`（EIO），**probe failed**，`/sys/class/ieee80211` 仅 `phy0`
 
-   * [ ] 千兆网口正常（PHY IP1001 @1，`ethtool eth0` 1000M/full）
+   * [x] 5G 卡 **无法创建 AP**（芯片唤醒失败）；2.4G（AR9280/AR9223）回归正常（`phy0: Atheros AR9280 Rev:2`）
 
-   * [ ] 6 个 LED 通过 `/sys/class/leds/` 可控（GPIO 0/2/3/4/5/7）
+   * [x] 千兆网口正常（PHY IP1001 @1，`eth0: link up (1000Mbps/Full duplex)`）
 
-   * [ ] 复位键（GPIO 8）有反应
+   * [ ] 6 个 LED 可控 / 复位键反应（本次烧录未专项验证）
+
+3. **结论**：补丁已解决"驱动识别"问题，但 **5G 卡芯片无法唤醒属硬件问题**，软件层无可行修复（证据见 §九-1）。当前设备以 2.4G 单频（phy0）可用。
 
 ### Phase 2：收尾（5G 验证通过后）
 
@@ -387,27 +387,27 @@ TARGET_DEVICES += maselink_ap2600ifm
 
 ## 八、已知风险与保护
 
-| 风险                | 说明                                   | 保护方案                                            |
-| ----------------- | ------------------------------------ | ----------------------------------------------- |
-| **ART 丢失**        | 无线校准数据丢失后无法恢复                        | 本机 ART 在 mini-PCIe 卡 EEPROM，不在 Flash，**天然免疫**   |
-| **MAC 丢失**        | hwinfo/NVRAM 被覆盖                     | 刷机前备份 hwinfo 64KB；新布局中 hwinfo 为只读分区             |
-| **Bootloader 误刷** | 刷 Breed 覆盖错误区域                       | Breed 写入前 md5sum 校验；完整备份旧 Flash（RedBoot）        |
-| **DDR 初始化失败**     | Bootloader 中 64MB 配错（AP-175 是 128MB） | Breed 初始化已识别 64MB DRAM（实测通过）                    |
-| **PHY 不通**        | PHY 地址/模式错                           | 已实测确认 PHY\@1+RGMII（IP1001），写入 DTS（§2.4）         |
-| **5G 无线不进系统**     | 5G 卡 vendor 被改写（0x028c）导致 ath9k 不识别  | 已加补丁 `513-ath9k_add_pci_ids.patch`，Phase 1 编译验证 |
+| 风险                | 说明                                   | 保护方案                                                                                                     |
+| ----------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| **ART 丢失**        | 无线校准数据丢失后无法恢复                        | 本机 ART 在 mini-PCIe 卡 EEPROM，不在 Flash，**天然免疫**                                                            |
+| **MAC 丢失**        | hwinfo/NVRAM 被覆盖                     | 刷机前备份 hwinfo 64KB；新布局中 hwinfo 为只读分区                                                                      |
+| **Bootloader 误刷** | 刷 Breed 覆盖错误区域                       | Breed 写入前 md5sum 校验；完整备份旧 Flash（RedBoot）                                                                 |
+| **DDR 初始化失败**     | Bootloader 中 64MB 配错（AP-175 是 128MB） | Breed 初始化已识别 64MB DRAM（实测通过）                                                                             |
+| **PHY 不通**        | PHY 地址/模式错                           | 已实测确认 PHY\@1+RGMII（IP1001），写入 DTS（§2.4）                                                                  |
+| **5G 无线不进系统**     | 5G 卡 vendor 被改写（0x028c）导致 ath9k 不识别  | 补丁 `513-ath9k_add_pci_ids.patch` 已解决驱动识别；但芯片唤醒失败（`Couldn't reset chip`/error -5）判定为**硬件问题**（§九-1），软件层无修复 |
 
 ***
 
 ## 九、待确认事项（已收敛，留给实测定论）
 
-> PHY 地址（@1）、无线卡型号（2.4G=AR9223/5G=AR9220）、bootloader 路线（Breed）均已实测确认，从旧表格移除。当前唯一未决为 **5G 卡驱动绑定验证**。
+> PHY 地址（@1）、无线卡型号（2.4G=AR9223/5G=AR9220）、bootloader 路线（Breed）均已实测确认。**5G 卡驱动绑定已实测**：补丁生效、驱动成功识别 `028c:0029` 并 `enabling device`，但芯片初始化失败（`Couldn't reset chip` → `error -5`），判定为硬件问题。
 
-| 序号 | 事项                                                                                                                                                    | 验证时机                                 |
-| -- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| 1  | **5G 卡（AR9220，vendor 0x028c）在补丁** **`513-ath9k_add_pci_ids.patch`** **编译后的驱动绑定**：`dmesg` 显示 0000:00:12.0 已绑定、IRQ 非 0，`iw list` 出 phy0+phy1，创建 AP 实测正常 | Phase 1（当前）编译刷机后                     |
-| 2  | USB 供电是否需要某个 GPIO 拉高                                                                                                                                  | 网口/无线验证通过后测试 USB                     |
-| 3  | 无线 MAC 是否按 `hwinfo@0x1c` 布局正确派生（eth0 偏移0 / 2.4G 偏移1 / 5G 偏移2）                                                                                         | Phase 2 启用 nvmem-cells 后 `iw dev` 查看 |
-| 4  | sysupgrade 在 Breed ATH-SDK-16MB 布局下是否正常工作                                                                                                             | Phase 2                              |
+| 序号 | 事项                                                                                                                                                                                                                | 验证时机/结论                                               |
+| -- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| 1  | **5G 卡（AR9220，vendor 0x028c）芯片无法唤醒**。证据链：① dl6/dl7 两次独立编译产物烧录测试一致复现 `Couldn't reset chip`（`Failed to wakeup in 500us`，RTC 域无响应）；② 旧固件启动日志同样仅 phy0（5G 从未工作）；③ PCI 配置空间可读（链路通）但芯片内部寄存器域无法唤醒；④ mach 源码无无线卡电源/复位 GPIO | **判定硬件问题**：5G 卡本身故障/供电/接触不良，软件层无可行修复；需拆机检查或更换 5G 卡后复测 |
+| 2  | USB 供电是否需要某个 GPIO 拉高                                                                                                                                                                                              | 网口/无线验证通过后测试 USB                                      |
+| 3  | 无线 MAC 是否按 `hwinfo@0x1c` 布局正确派生（eth0 偏移0 / 2.4G 偏移1 / 5G 偏移2）                                                                                                                                                     | Phase 2 启用 nvmem-cells 后 `iw dev` 查看                  |
+| 4  | sysupgrade 在 Breed ATH-SDK-16MB 布局下是否正常工作                                                                                                                                                                         | Phase 2                                               |
 
 ***
 
@@ -427,10 +427,11 @@ TARGET_DEVICES += maselink_ap2600ifm
 | 2022-09→2023-04 | 官方合并 Aruba AP-175 ath79 支持（PR #10794，APBoot 兼容 commit 90ad13c）                                                                                                        |
 | 2026-08-29      | Breed（`breed-ar7161-blank.bin`）经 `mtd write` 写入 mtd0 替换 RedBoot，md5sum 校验通过                                                                                           |
 | 2026-08-30      | Breed mdio 实测 PHY\@1（IP1001）；sysfs 实测无线卡身份（2.4G=AR9223 / 5G=AR9220，vendor 0x028c）；DTS + generic.mk 落地 Breed ATH-SDK-16MB 布局；ath9k 补丁 `513-ath9k_add_pci_ids.patch` 就绪 |
-| 现在              | **本文档 v6 修订，落地于当前** **`d:\vc\lede`；待 Phase 1 编译验证 5G 驱动绑定**                                                                                                           |
+| 2026-08-31      | GitHub Action 编译（#33336285638）并烧录验证：**513 补丁生效**（5G 卡 `028c:0029` 被 ath9k 识别绑定），但芯片初始化失败 `Couldn't reset chip`（error -5）稳定复现，判定 **5G 卡为硬件问题**；当前以 2.4G 单频运行           |
+| 现在              | **本文档 v7 修订，记录 Phase 1 实测定论（5G 硬件问题）**                                                                                                                                |
 
 ***
 
-*文档修订：v6，2026-08-30*
+*文档修订：v7，2026-08-31（Phase 1 实测定论：5G 卡硬件问题）*
 *目标仓库：`d:\vc\lede`（coolsnowwolf/lede），平台* *`ath79/generic`*
 *核心策略：以官方 Aruba AP-175 的 ath79 DTS 为骨架，注入 mach-maselink-ap2600ifm.c 的硬件参数（64MB、GPIO），经实测修正（PHY\@1、Breed ATH-SDK-16MB 分区、5G 卡 vendor 0x028c 补丁）后落地；MAC 布局采用 hwinfo\@0x1c（暂以注释保留）*
