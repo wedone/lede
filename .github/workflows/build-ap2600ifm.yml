@@ -8,6 +8,7 @@ on:
       - ap2600
     paths:
       - 'target/linux/ath79/**'
+      - 'package/kernel/mac80211/**'
       - '.github/workflows/build-ap2600ifm.yml'
   workflow_dispatch:
 
