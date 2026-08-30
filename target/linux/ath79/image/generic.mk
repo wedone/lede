@@ -1520,10 +1520,10 @@ define Device/maselink_ap2600ifm
   SOC := ar7161
   DEVICE_VENDOR := MASELinK
   DEVICE_MODEL := AP2600IFM
-  IMAGE_SIZE := 16000k
+  IMAGE_SIZE := 15872k
   DEVICE_PACKAGES := kmod-usb2
   LOADER_TYPE := bin
-  LOADER_FLASH_OFFS := 0x42000
+  LOADER_FLASH_OFFS := 0x52000
   COMPILE := loader-$(1).bin
   COMPILE/loader-$(1).bin := loader-okli-compile
   KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49 | loader-okli $(1) 8128 | uImage none
