@@ -118,3 +118,4 @@ Please press Enter to activate this console.  ← 进入 OpenWrt shell
 
 * 文档（v4/交接）里 OKLI/RedBoot 相关表述已在新版交接文档中标注为 **Breed 阶段过时**，以交接文档顶部"★当前状态"表为准。
 
+<br />
