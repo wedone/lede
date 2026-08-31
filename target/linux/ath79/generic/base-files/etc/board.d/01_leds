@@ -260,8 +260,9 @@ maselink,ap2600ifm)
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:rf2" "phy1tpt"
 	ucidef_set_led_netdev "lan" "LAN" "green:rf2top" "eth0" "tx rx"
 	# 无线灯开机默认点亮（配合 trigger 实现"常亮+活动闪烁"）
-	uci set system.led.wlan2g.default="1"
-	uci set system.led.wlan5g.default="1"
+	# 注意: section 名为 led_<name>, 故引用 system.led_wlan2g / system.led_wlan5g
+	uci set system.led_wlan2g.default="1"
+	uci set system.led_wlan5g.default="1"
 	;;
 meraki,mr12|\
 tplink,cpe210-v2|\
