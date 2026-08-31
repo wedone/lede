@@ -1,0 +1,16 @@
+#!/bin/sh
+# MASELinK AP2600IFM: 默认 LAN IP 改为 192.168.3.1/24, 避免与光猫默认 192.168.1.1 冲突。
+# 仅在首次启动(firstboot)时生效; 用户已保存的配置不会被覆盖。
+
+[ -z "$(uci get network.lan.ipaddr 2>/dev/null)" ] || [ "$(uci get network.lan.ipaddr 2>/dev/null)" = "192.168.1.1" ] || exit 0
+
+board="$(board_name)"
+case "$board" in
+	maselink,ap2600ifm)
+		uci set network.lan.ipaddr='192.168.3.1'
+		uci set network.lan.netmask='255.255.255.0'
+		uci commit network
+		;;
+esac
+
+exit 0

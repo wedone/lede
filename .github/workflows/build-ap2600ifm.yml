@@ -52,6 +52,8 @@ jobs:
           CONFIG_TARGET_ath79=y
           CONFIG_TARGET_ath79_generic=y
           CONFIG_TARGET_ath79_generic_DEVICE_maselink_ap2600ifm=y
+          # 纯 AP 精简：argon 为主题
+          CONFIG_PACKAGE_luci-theme-argon=y
           EOF
           make defconfig
           grep -E 'CONFIG_TARGET_ath79_generic_DEVICE_maselink' .config
