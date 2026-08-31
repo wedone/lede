@@ -249,6 +249,16 @@ hak5,lan-turtle)
 joyit,jt-or750i)
 	ucidef_set_led_default "ath10k" "ath10k-disable" "ath10k-phy0" "0"
 	;;
+maselink,ap2600ifm)
+	# 2026-09-01 GPIO 实测映射（sysfs 逐个闪烁确认）：
+	#   GPIO3(green:d24top) = 2.4G 灯 元件 LED3
+	#   GPIO4(green:rf2)    = 5G 灯   元件 LED4
+	#   GPIO5(green:rf2top) = WPS 灯 元件 LED2 -> 改为网络活动灯(eth0 tx/rx)
+	#   GPIO0/2/7 无物理 LED, 不配置
+	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:d24top" "phy0tpt"
+	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:rf2" "phy1tpt"
+	ucidef_set_led_netdev "lan" "LAN" "green:rf2top" "eth0" "tx rx"
+	;;
 meraki,mr12|\
 tplink,cpe210-v2|\
 tplink,cpe210-v3)
