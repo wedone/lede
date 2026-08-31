@@ -1,0 +1,75 @@
+#!/bin/sh
+# ap2600ifm 救急模式: 长按物理按钮(约5s)后, 在 LAN 上临时增加管理通道:
+#   - 辅助 IP  192.168.9.1/24 (叠加在 br-lan, 不改变原网络配置)
+#   - 临时 DHCP 192.168.9.100-200 (独立 dnsmasq 实例)
+# 电脑接 LAN 自动获取 192.168.9.x 后, 浏览器访问 http://192.168.9.1 即可进管理页。
+#
+# 纯内存态: 不写 flash/overlay, 重启自动消失, 不影响正常配置。
+# 用法: ap2600ifm-rescue {start|stop|status}
+#
+# 2026-09-01 按钮交互设计(见技术说明书):
+#   短按(<1s)    = reboot
+#   长按(按住5s) = 本救急模式(临时 dhcp 管理通道, 纯内存态)
+#   超长按(>=10s)= factory reset(仅 AP2600IFM; 其他 ath79 设备保持默认 failsafe/reset)
+
+RESCUE_IP="192.168.9.1"
+RESCUE_MASK="24"
+RESCUE_DHCP="192.168.9.100,192.168.9.200,255.255.255.0,12h"
+RESCUE_CONF="/tmp/rescue-dnsmasq.conf"
+RESCUE_MARK="/tmp/rescue-mode"
+BR="br-lan"
+
+start() {
+    # 已在救急模式则直接退出
+    [ -f "$RESCUE_MARK" ] && { echo "rescue already active"; exit 0; }
+
+    # 1. 添加辅助 IP (幂等; 若已存在会返回错误但无碍)
+    ip addr add "$RESCUE_IP/${RESCUE_MASK}" dev "$BR" 2>/dev/null
+
+    # 2. 写临时 dnsmasq 配置: 仅服务 192.168.9.x 子网
+    cat > "$RESCUE_CONF" <<EOF
+interface=$BR
+bind-interfaces
+listen-address=$RESCUE_IP
+dhcp-range=$RESCUE_DHCP
+dhcp-option=3,$RESCUE_IP
+dhcp-option=6,223.5.5.5
+no-resolv
+port=0
+EOF
+
+    # 3. 启动独立 dnsmasq
+    dnsmasq --conf-file="$RESCUE_CONF" \
+            --pid-file=/tmp/rescue-dnsmasq.pid \
+            --no-poll --no-hosts 2>/dev/null
+
+    # 4. 打标记
+    touch "$RESCUE_MARK"
+    echo "rescue mode ACTIVE: http://$RESCUE_IP (DHCP .100-.200)"
+}
+
+stop() {
+    [ -f /tmp/rescue-dnsmasq.pid ] && kill "$(cat /tmp/rescue-dnsmasq.pid)" 2>/dev/null
+    rm -f /tmp/rescue-dnsmasq.pid "$RESCUE_CONF" "$RESCUE_MARK"
+    ip addr del "$RESCUE_IP/${RESCUE_MASK}" dev "$BR" 2>/dev/null
+    echo "rescue mode stopped"
+}
+
+status() {
+    if [ -f "$RESCUE_MARK" ]; then
+        echo "rescue ACTIVE"
+        ip -4 addr show dev "$BR" | grep " inet "
+        [ -f /tmp/rescue-dnsmasq.pid ] && echo "dnsmasq pid=$(cat /tmp/rescue-dnsmasq.pid)"
+    else
+        echo "rescue inactive"
+    fi
+}
+
+case "$1" in
+    start)   start ;;
+    stop)    stop ;;
+    status)  status ;;
+    *) echo "usage: $0 {start|stop|status}"; exit 1 ;;
+esac
+
+exit 0

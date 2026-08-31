@@ -1,0 +1,37 @@
+#!/bin/sh
+
+. /lib/functions.sh
+
+OVERLAY="$( grep ' /overlay ' /proc/mounts )"
+
+case "$ACTION" in
+pressed)
+	[ -z "$OVERLAY" ] && return 0
+	return 5
+;;
+timeout)
+	# 长按触发(procd 默认按住5s): AP2600IFM 启动救急模式(临时管理通道);
+	# 其他 ath79 设备保持默认 failsafe。
+	if [ -x /usr/sbin/ap2600ifm-rescue ]; then
+		echo "RESCUE MODE" > /dev/console
+		/usr/sbin/ap2600ifm-rescue start
+	else
+		. /etc/diag.sh
+		set_state failsafe
+	fi
+;;
+released)
+	if [ "$SEEN" -lt 1 ]
+	then
+		echo "REBOOT" > /dev/console
+		sync
+		reboot
+	elif [ "$SEEN" -ge 10 -a -n "$OVERLAY" ]
+	then
+		echo "FACTORY RESET" > /dev/console
+		factoryreset -y && reboot &
+	fi
+;;
+esac
+
+return 0
