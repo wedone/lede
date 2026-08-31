@@ -601,7 +601,7 @@ dmesg | grep -iE 'ath9k|rtc|reset|pci 0000:00:12'
 
 ### 12.1 背景与思路
 
-当前板子 = **Breed + OpenWrt**（Breed 覆写 flash 0x0，OpenWrt 从 0x50000）。5G 卡（AR9220 `028c:0029`）在 OpenWrt 下 `Couldn't reset chip` 无法唤醒，软硬件原因未定。作者确认 `ap2600/` 目录 8 分区为**官方（Comba 原厂 Atheros SDK）系统**——`FIS_directorymtd5.bin` 的 boot\_script 为`fis load -d vmlinux.bin.gz`、boot\_script\_data 为    ` exec -c "...root=31:02 rootfstype=jffs2 init=/sbin/init mem=64M"\`，是原生 SDK 布局，非社区 OpenWrt。
+当前板子 = **Breed + OpenWrt**（Breed 覆写 flash 0x0，OpenWrt 从 0x50000）。5G 卡（AR9220 `028c:0029`）在 OpenWrt 下 `Couldn't reset chip` 无法唤醒，软硬件原因未定。作者确认 `ap2600/` 目录 8 分区为**官方（Comba 原厂 Atheros SDK）系统**——`FIS_directorymtd5.bin` 的 boot\_script 为`fis load -d vmlinux.bin.gz`、boot\_script\_data 为     ` exec -c "...root=31:02 rootfstype=jffs2 init=/sbin/init mem=64M"\`，是原生 SDK 布局，非社区 OpenWrt。
 
 把官方 8 分区写回并运行官方系统，即可做**决定性硬件验证**：
 
@@ -701,14 +701,14 @@ mtd write /tmp/redbootmtd0.bin u-boot           # 官方 RedBoot 落在 0x0-0x40
 
 ### 13.1 官方系统已可运行（已写回成功）
 
-| 项 | 值 | 说明 |
-| -- | - | - |
-| 系统 | `root@comba:/` | 串口 shell（COM4,115200），官方 SDK 系统 |
-| 设备 IP | `192.168.100.100/24` | 官方默认静态 IP（`default` 网卡）；**≠** 光猫 192.168.1.1 |
-| Web 登录 | 用户 **admin** / 密码 **admin** | `mini_httpd -p 80`；web 功能精简（瘦AP基础配置） |
-| telnet（文档记录） | 用户 **comba** / 密码 **password**，命令 `set system apmode fat ap` | 源自 E 盘 `瘦ap变胖ap.txt`；**未**在本会话验证 |
-| SSH | `dropbear` 已运行 | - |
-| 版本 | `config.xml` `<version>1.3.2001</version>`、`<type>2010</type>` | - |
+| 项            | 值                                                              | 说明                                           |
+| ------------ | -------------------------------------------------------------- | -------------------------------------------- |
+| 系统           | `root@comba:/`                                                 | 串口 shell（COM4,115200），官方 SDK 系统              |
+| 设备 IP        | `192.168.100.100/24`                                           | 官方默认静态 IP（`default` 网卡）；**≠** 光猫 192.168.1.1 |
+| Web 登录       | 用户 **admin** / 密码 **admin**                                    | `mini_httpd -p 80`；web 功能精简（瘦AP基础配置）         |
+| telnet（文档记录） | 用户 **comba** / 密码 **password**，命令 `set system apmode fat ap`   | 源自 E 盘 `瘦ap变胖ap.txt`；**未**在本会话验证             |
+| SSH          | `dropbear` 已运行                                                 | -                                            |
+| 版本           | `config.xml` `<version>1.3.2001</version>`、`<type>2010</type>` | -                                            |
 
 > ⚠️ **注意**：`set` 在 ash 是 shell builtin，`set system apmode fat ap` 需进入官方专用 CLI（telnet 登录后）执行，不能在根 shell 直接敲。**用户已决定暂不切换胖AP**。
 
@@ -725,28 +725,172 @@ mtd write /tmp/redbootmtd0.bin u-boot           # 官方 RedBoot 落在 0x0-0x40
 官方系统（`ath_pci` 0.9.4.5 SDK 驱动）**同样只识别 2.4G 单卡**：
 
 * 接口：仅 **`ath0`** = `IEEE 802.11ng`（2.462GHz，2.4G，AR9280）
+
 * `/proc/bus/pci/devices`：
+
   * `0000  168c0029` → 2.4G AR9280，绑定 `ath_pci`（即 `wifi0`）
+
   * `0008  028c0029` → **5G AR9220，未绑定任何驱动**
+
 * `dmesg`：仅 `wifi0: Atheros 9280: mem=0x10000000, irq=48`；无 5G 卡 attach/reset 报错
+
 * **结论**：官方 SDK 的 `ath_pci` 命中 168c ID 表，ATMOS 因 5G 卡 vendor 被改写为 **0x028c** 而不匹配、不初始化——**与 OpenWrt 的 ath9k 同一根因**。官方固件下未触发 `Couldn't reset chip`（是不初始化而非初始化失败），故**无法借官方系统判定 5G 卡硬件好坏**。
 
 ### 13.4 config.xml 关键字段（官方配置）
 
 * `<workmode>1</workmode>`（第 14 行）＝瘦AP模式（依赖 AC/CAPWAP）
+
 * fat/thin 切换走 CLI `set system apmode fat ap`，无独立脚本文本（相关逻辑编译在二进制里）
+
 * `/etc/config/config.ap83`、`config.wtp`（WTP/AC 配置，`<AC_ADDRESSES>255.255.255.255</AC_ADDRESSES>` 广播发现）
+
 * `setapworkmode.sh` 仅写 `ip_forward`，**并非**胖AP切换（已核实）
 
 ### 13.5 结论与本阶段定位
 
-* **5G 未工作的根因在驱动侧的 vendor ID 匹配**（官方 ath_pci 与 OpenWrt ath9k 一致），非胖/瘦AP模式或运行模式问题；
+* **5G 未工作的根因在驱动侧的 vendor ID 匹配**（官方 ath\_pci 与 OpenWrt ath9k 一致），非胖/瘦AP模式或运行模式问题；
+
 * 官方系统能正常跑且 2.4G 可用，可作后续实验底座；**但官方系统下无法验证 5G 硬件好坏**（它压根不初始化 5G 卡）；
+
 * 结合 §九/§十二，5G 是否硬件问题的判定仍须：① 回 OpenWrt（已有 `513-ath9k_add_pci_ids.patch`）看是否能唤醒；② 或实测定测卡供电/RESET#（§11.5-11.6）。
 
 ***
 
-*文档修订：v11，2026-08-31（新增 §十三 官方固件实测信息：登录凭据/IP/workmode/无线现状；确认官方 ath_pci 亦因 vendor 0x028c 不初始化 5G 卡）*
-*上一版本：v10，2026-08-31（新增 §十二 用官方 8 分区写回验证 5G 硬件；确认官方 FIS 偏移与论坛 `fis write` 一致；产出官方 16MB 编程器镜像 md5=c8eb2aa4dce43a3149411be27c44ca2b）*
+## 十四、A 方案：回刷 OpenWrt 复测 5G（v12 新增，2026-08-31 实测）
+
+> 官方系统下 `ath_pci` 因 vendor 0x028c 不初始化 5G 卡（§13.3），无法判定硬件。A 方案＝回刷带 `513-ath9k_add_pci_ids.patch` 的 OpenWrt（dl7 产物）再次尝试唤醒 5G 卡，观察第二次/RE 枚举表现。
+
+### 14.1 环境
+
+* 设备：Breed + OpenWrt 24.10.5（dl7 编译产物，用户手动经 Breed 刷入 firmware 分区并正常登录）
+
+* 连接：串口 COM4 115200（`root@LEDE` shell）、SSH 192.168.1.1:22 可达
+
+* 工具：`exp_5g_state.py`（状态采集）/ `exp_5g_wake.py`（remove+rescan 重试）
+
+### 14.2 实测数据（原始日志）
+
+```
+$ ls /sys/bus/pci/devices/
+0000:00:11.0  0000:00:12.0
+11.0: 0x168c:0x0029      # 2.4G AR9280
+12.0: 0x028c:0x0029      # 5G AR9220（vendor 被 OEM 改写）
+
+$ cat .../0000:00:11.0/{vendor,device,irq,enable,resource}
+0x168c 0x0029 irq=13 enable=1  BAR0=0x10000000-0x1000ffff
+$ cat .../0000:00:12.0/{...}
+0x028c 0x0029 irq=14 enable=0  BAR0=0x10010000-0x1001ffff   # driver 为空(probe 失败)
+
+$ dmesg | grep -iE 'ath9k|ath: phy'
+ath9k 0000:00:11.0: enabling device (0000 -> 0002)
+ath9k 0000:00:12.0: enabling device (0000 -> 0002)     # 补丁生效，驱动尝试绑定
+ath: phy1: Failed to wakeup in 500us
+ath: phy1: Couldn't wakeup chip
+ath: phy1: Unable to initialize hardware; initialization status: -5
+ath9k 0000:00:12.0: Failed to initialize device
+ath9k: probe of 0000:00:12.0 failed with error -5
+```
+
+**remove + rescan 重试：**
+
+```
+echo 1 > /sys/bus/pci/devices/0000:00:12.0/remove   # rc=0
+ls /sys/bus/pci/devices/ → 仅 0000:00:11.0
+echo 1 > /sys/bus/pci/rescan
+ls /sys/bus/pci/devices/ → 仍仅 0000:00:11.0         # 5G 卡消失，无法再次枚举
+```
+
+### 14.3 结论
+
+| 项             | 结果                                                                          |
+| ------------- | --------------------------------------------------------------------------- |
+| 驱动识别          | ✅ 补丁生效，ath9k `enabling device` 尝试初始化 5G 卡（028c:0029）                        |
+| PCI 配置空间      | ✅ 链路通：BAR0 已分配（0x1001xxxx）、IRQ=14 已分配                                       |
+| 芯片唤醒          | ❌ `Failed to wakeup in 500us` → `Couldn't wakeup chip` → error -5（RTC 域无响应） |
+| remove+rescan | ❌ 5G 卡**消失**不再枚举（2.4G 卡正常回归）                                                |
+
+* 与官方系统一致性：官方 `ath_pci` 因 ID 不匹配**根本不去初始化** 5G 卡（§13.3），本方案下驱动**已初始化但芯片唤不醒**——两套路径都带不起 5G，**排除 OpenWrt 端驱动 ID/枚举问题**；
+
+* 残留未定因素：两次实验（dl6/dl7）均复现同样 `-5`。RTC 域唤醒失败指向 **5G 卡供电/复位（GPIO/LDO）** 或**卡硬件**，需 §十一 万用表实测 GPIO/供电后定论；
+
+* **当前设备状态**：Breed + OpenWrt 24.10.5（2.4G 单频可用），SSH 192.168.1.1:22、串口 root 均可用，可继续做后续实验。
+
+### 14.4 冷/热启动对比与卡位互换实测（v13 新增，2026-08-31）
+
+用户将 AR9220（5G，背面）与 AR9223（2.4G，正面）两卡互换插槽测试，随后换回原位（9220 背面=12.0、9223 正面=11.0）。冷启动与热启动对照实测：
+
+| 启动方式 | 11.0（正面，2.4G 卡） | 12.0（背面，AR9220） |
+| -- | -- | -- |
+| reboot 热启动（互换前已测） | ✅ 枚举 `168c:0029`，phy0 工作 | ✅ 枚举 `028c:0029`，但唤醒失败 -5 |
+| reboot 热启动（互换后） | ✅ 枚举 `168c:0029`，phy0 工作 | ❌ 无设备 |
+| 断电冷启动 ① | ❌ PCI 全空（连 11.0 也丢，偶发） | ❌ |
+| 断电冷启动 ② | ✅ 枚举 `168c:0029`，phy0（AR9280）工作 | ❌ 无设备，`pci rescan` 亦无法拉出 |
+
+**关键结论（修正原"软件缺 GPIO"假设）**：
+
+1. **2.4G 卡（AR9223/AR9280）健康**：所有启动条件下均正常枚举并工作；
+2. **12.0 槽 AR9220 在互换插拔之后**：无论冷/热启动、甚至 `echo 1 > /sys/bus/pci/rescan` 强制重扫，**均不再被 PCI 枚举**（连配置空间都读不到）——与互换前"能枚举但 RTC 唤醒失败"完全不同；
+3. **mach 源码复核**（`mach-maselink-ap2600ifm.c`）：`ap2600ifm_setup()` 仅 `ath79_register_pci()` 挂卡，**无任何网卡供电/复位 GPIO 初始化**，供电为板硬件常开；故"软件缺 5G 上电时序"与 12.0 卡"从可枚举变为不可枚举"的现象不符；
+4. **新倾向**：AR9220 卡在**插拔过程中受损（金手指接触不良/信号线损坏）**或 **12.0 槽接触问题**，概率高于芯片自身故障。12.0 卡从"可枚举"到"不可枚举"的转折点恰为用户本次物理插拔。
+
+**待做（定论实验）**：把 AR9220 单独插到已确认健康的 11.0 槽（2.4G 卡取下）再上电——若 11.0 能枚举出 `028c:0029`（哪怕初始化 -5）→ 卡本身 PCI 功能正常，问题在 12.0 槽；若 11.0 也无响应 → 卡已损坏/接触不良，建议换卡（AR9220 二手拆机件）。
+
+### 14.5 定论：AR9220 完好、双频可用，病根在背面 12.0 卡槽（v14 新增，2026-08-31 实测）
+
+**实验（AR9220 单独插正面 11.0 槽）实测数据：**
+
+```
+/sys/class/ieee80211/phy0/device/
+vendor=0x168c  device=0x0029
+subsystem_vendor=0x168c  subsystem_device=0x2096   ← WLM200NX/AR9220 双频卡专属
+iwinfo: Hardware: 168C:0029 168C:2096 [Generic MAC80211]  HW Mode(s): 802.11a/b/g/n
+iw phy phy0 info: Band 1 (2412-2484, 11 信道可用) + Band 2 (5180-5825, 36-165 全信道)
+dmesg: ieee80211 phy0: Atheros AR9280 Rev:2   ← 仅驱动显示名，实为 AR9220
+```
+
+**结论（推翻此前"5G 卡唤醒失败 = 卡问题"的判定方向）：**
+
+1. **AR9220 卡完全健康，双频射频全开**：子系统 `0x2096`（WLM200NX）为 AR9220 专属；Band 2 列出全部 5G 信道（36~165）。用户丝印确认 + 双频可用双重印证；
+2. **驱动识别成 "Atheros AR9280 Rev:2" 仅为显示问题**：AR9280 与 AR9220 的 PCI device id 均为 `0x0029`，ath9k 按 EEPROM/子系统归类，双频能力以实际信道为准（Band 2 存在即双频）；
+3. **真正的病根 = 背面 12.0 卡槽接触/供电问题**，证据链：
+   * AR9220 在 11.0 槽 → 完美双频工作（插槽差异、非卡差异）；
+   * AR9223 曾插 12.0 槽（互换后）→ 无枚举；AR9220 曾插 12.0 槽 → vendor 高位误读（`0x168c`→`0x028c`，低字节均 `0x8c`，高字节 `0x16→0x02` 为典型 AD 线高位接触不良/浮空误读）→ 后期 12.0 彻底无响应；
+   * 即：**12.0 槽任何卡都无法正常工作，11.0 槽任何卡（168c 系）都正常**——问题随槽位走，不随卡走；
+4. **最终状态**：AR9220 置于正面 11.0 槽，单卡即可提供 **2.4G+5G 双频 AP**（已实测 AP 建立成功，信道1）。12.0 槽如需使用，按 §11.5-11.6 检修槽位（清金手指/弹片/3.3V 供电）；无维修条件时以单卡双频方案运行。
+
+*对文档 §2.5/§8/§9 中"5G 卡 vendor 0x028c"记录的修正说明：`0x028c` 系 12.0 槽 AD 线高位误读所致，AR9220 真实 vendor 为 `0x168c`；`513-ath9k_add_pci_ids.patch` 的 `0x028c` 条目经实测确认**不必要**（标准 `0x168c` ID 已在 ath9k 表内），**已删除**（`patches` 与 `patches-6.18` 两处副本及专用诊断 workflow `diag-ath9k-patch.yml` 一并移除）。*
+
+### 14.6 最终验证：清理槽位后双卡双频全部恢复（v15 新增，2026-08-31 实测）
+
+用户清理 **12.0 背面卡槽**（金手指/槽位接触）后分步实测：
+
+1. **AR9220 单独挂 12.0 槽** → ✅ 枚举 `168c:0029`（vendor 变回真实值，非误读 `028c`）、ath9k `enabling device`、phy0 含 Band1+Band2（40 信道，双频全开）；
+2. **AR9223 单独挂 11.0 槽** → ✅ 枚举 `168c:0029`、sub `0x2091`（DNMA-91/2.4G 单频）、phy0 正常；
+3. **双卡装回（9223 正面 11.0 + 9220 背面 12.0）** → ✅✅ **phy0 + phy1 双 phy 全部初始化成功**：
+
+```
+pci 0000:00:11.0: [168c:0029]  sub 0x168c:0x2091   # AR9223 2.4G
+pci 0000:00:12.0: [168c:0029]  sub 0x168c:0x2096   # AR9220 双频
+ath9k 0000:00:11.0: enabling device -> phy0 (AR9280 显示名)
+ath9k 0000:00:12.0: enabling device -> phy1 (AR9280 显示名)
+iw: phy1 含 Band 1 + Band 2  →  5G 频段启用
+```
+
+**最终定论（问题闭环）**：
+
+* **硬件全部完好**：AR9220、AR9223、11.0 槽、12.0 槽均无故障；
+* **唯一根因 = 12.0 背面卡槽接触不良**（AD 地址线高位虚接）→ 表现为 vendor 误读 `0x028c`、驱动无法匹配、初始化失败 `-5`、甚至无枚举；清理金手指后彻底解决；
+* **"5G 卡坏 / 供电 GPIO 缺失"等此前假设全部排除**；`513-ath9k_add_pci_ids.patch`（0x028c 条目）实际**不需要**，因真实 vendor 为 `0x168c`（标准 Atheros ID 已在 ath9k 表内）；
+* **当前最终形态**：双卡双频 AP 可用（2.4G=phy0 + 5G=phy1），是本项目移植成功的完整状态。
+
+***
+
+*文档修订：v15，2026-08-31（§14.6 最终验证：清理 12.0 背面卡槽后 vendor 误读消失、AR9220/AR9223 各卡槽分测通过、双卡装回后 phy0+phy1 双频全部恢复；根因闭环=槽位接触不良，5G 卡完好，513 补丁 0x028c 条目确认不必要；项目移植双卡双频达成）*
+*文档修订：v14，2026-08-31（§14.5 定论：AR9220 实测完好双频全开，子系统 0x2096 证实；病根为背面 12.0 槽接触/供电故障——同一卡在 11.0 槽完美工作、在 12.0 槽 vendor 高位误读/无响应；单卡双频方案已实测可行；修正 "5G vendor 0x028c" 为槽位误读）*
+
+*文档修订：v13，2026-08-31（§14.4 新增冷/热启动对比与卡位互换实测：12.0 槽 AR9220 在互换插拔后不再被任何方式枚举，2.4G 卡全程健康；复核 mach 无供电/复位 GPIO，修正"软件缺上电时序"假设，新倾向：卡插拔受损或槽接触不良，待单卡插 11.0 定论）*
+*上一版本：v12，2026-08-31（新增 §十四 A方案实验：回刷 OpenWrt(dl7) 复测 5G——补丁生效/驱动初始化但芯片唤醒失败 -5、remove+rescan 后卡消失，PCI 层正常，确认排除驱动枚举问题，余供电/复位待实测）*
+*上一版本：v11，2026-08-31（新增 §十三 官方固件实测信息：登录凭据/IP/workmode/无线现状；确认官方 ath\_pci 亦因 vendor 0x028c 不初始化 5G 卡）*
+*上一版本：v10，2026-08-31（新增 §十二 用官方 8 分区写回验证 5G 硬件；确认官方 FIS 偏移与论坛* *`fis write`* *一致；产出官方 16MB 编程器镜像 md5=c8eb2aa4dce43a3149411be27c44ca2b）*
 *目标仓库：`d:\vc\lede`（coolsnowwolf/lede），平台* *`ath79/generic`*
 *核心策略：以官方 Aruba AP-175 的 ath79 DTS 为骨架，注入 mach-maselink-ap2600ifm.c 的硬件参数（64MB、GPIO），经实测修正（PHY\@1、Breed ATH-SDK-16MB 分区、5G 卡 vendor 0x028c 补丁）后落地；MAC 布局采用 hwinfo\@0x1c（暂以注释保留）*
