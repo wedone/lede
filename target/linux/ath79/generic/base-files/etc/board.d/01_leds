@@ -255,9 +255,13 @@ maselink,ap2600ifm)
 	#   GPIO4(green:rf2)    = 5G 灯   元件 LED4
 	#   GPIO5(green:rf2top) = WPS 灯 元件 LED2 -> 改为网络活动灯(eth0 tx/rx)
 	#   GPIO0/2/7 无物理 LED, 不配置
+	# 2.4G/5G 无线灯: 默认常亮(default=1), 有流量时活动闪烁(phyXtpt)
 	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:d24top" "phy0tpt"
 	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:rf2" "phy1tpt"
 	ucidef_set_led_netdev "lan" "LAN" "green:rf2top" "eth0" "tx rx"
+	# 无线灯开机默认点亮（配合 trigger 实现"常亮+活动闪烁"）
+	uci set system.led.wlan2g.default="1"
+	uci set system.led.wlan5g.default="1"
 	;;
 meraki,mr12|\
 tplink,cpe210-v2|\
