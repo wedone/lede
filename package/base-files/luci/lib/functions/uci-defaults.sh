@@ -602,15 +602,7 @@ ucidef_set_led_usbport() {
 }
 
 ucidef_set_led_wlan() {
-	# 可选第5参数 default: 期望开机默认点亮的亮度(0/1), 写入 JSON 供 config_generate 生成 system.led_*.default
 	_ucidef_set_led_trigger "$1" "$2" "$3" "$4"
-	[ -n "${5+x}" ] && {
-		json_select_object led
-		json_select_object "$1"
-		json_add_string default "$5"
-		json_select ..
-		json_select ..
-	}
 }
 
 ucidef_set_rssimon() {

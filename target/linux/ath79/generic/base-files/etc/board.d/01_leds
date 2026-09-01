@@ -255,9 +255,10 @@ maselink,ap2600ifm)
 	#   GPIO4(green:rf2)    = 5G 灯   元件 LED4
 	#   GPIO5(green:rf2top) = WPS 灯 元件 LED2 -> 改为网络活动灯(eth0 tx/rx)
 	#   GPIO0/2/7 无物理 LED, 不配置
-	# 2.4G/5G 无线灯: 第5参数 default=1 实现"开机默认常亮 + 流量闪烁(phyXtpt)"
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:d24top" "phy0tpt" "1"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:rf2" "phy1tpt" "1"
+	# 2.4G/5G 无线灯: 实测 trigger=default-on 方能"空闲常亮"
+	#   (phy0radio/phy0assoc 在 AR922x 上实测不亮; phy0tpt 会覆盖 default 导致空闲即灭)
+	ucidef_set_led_default "wlan2g" "WLAN2G" "green:d24top" "1"
+	ucidef_set_led_default "wlan5g" "WLAN5G" "green:rf2" "1"
 	ucidef_set_led_netdev "lan" "LAN" "green:rf2top" "eth0" "tx rx"
 	;;
 meraki,mr12|\
