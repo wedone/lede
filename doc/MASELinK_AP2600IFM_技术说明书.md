@@ -19,6 +19,8 @@
 | 无线         | 2.4G = AR9223（`168c:0029/2091`）；5G = AR9220 双频卡（`168c:0029/2096`） |
 | Bootloader | **Breed**（ath79 标准 uImage 引导，magic 0x27051956）                    |
 | 操作系统       | OpenWrt 24.10.5（内核 6.6.152，`r0-3385b01c` 起）                       |
+| **本机 MAC**  | `00:27:1d:04:b6:ad`（存于 hwinfo 分区偏移 0，`798afeb44` 起由 DTS nvmem 绑定 eth0） |
+| **本机 SN**   | `0001102150865`（hwinfo 偏移 0x1c 起 ASCII）                             |
 
 **固件特性（`a2b246a46`** **起）**：
 
@@ -142,7 +144,7 @@ AP 运行在**纯桥接/瘦 AP 模式**时，LAN 无 DHCP。若网络异常导�
 | ---------- | -------- | -------- | ---------------------------- |
 | u-boot     | 0x000000 | 0x050000 | **Breed** bootloader         |
 | firmware   | 0x050000 | 0xf90000 | OpenWrt（squashfs sysupgrade） |
-| hwinfo     | 0xfe0000 | 0x010000 | 硬件信息/校准                      |
+| hwinfo     | 0xfe0000 | 0x010000 | 硬件信息：MAC@0x0（本机 `00:27:1d:04:b6:ad`）+ SN@0x1c（ASCII）。DTS 标 read-only，系统内不可写，改写需走 Breed |
 | u-boot-env | 0xff0000 | 0x010000 | Breed 环境                     |
 
 ### 6.2 刷写 sysupgrade（正常升级）
@@ -245,6 +247,7 @@ breed> flash write 0x50000 0x81000000 0x9A0000
 | `63318a9ec` | WIFI 灯"开机默认常亮"初版（`ucidef_set_led_default`）——**后经实测发现不可用**（见下条修正）                              |
 | `0d880aef7` | 文档记录 WIFI 灯常亮实现（AR922x LED 实测结论）                                                              |
 | `7836e513f` | **WIFI 灯常亮修正**（DTS GPIO3/4 极性 LOW→HIGH + trigger 改 `default-on`）+ **救急模式 IP 统一为 192.168.3.1** |
+| `798afeb44` | **LAN MAC 固定修复**（eth0 绑定 hwinfo@0x0 真实 MAC）+ **救急模式执行权限修复**（rescue/reset 脚本 git 644→755，`[ -x ]` 判断此前恒失败）。另：本机 hwinfo 已于 2026-09-02 用 Breed 从社区备份 MAC 还原为本机原始数据（MAC `00:27:1d:04:b6:ad` / SN `0001102150865`，源文件 `E:\A-硬件相关\router\IP1001+ar7161+AR9220+AR9223\board-configmtd4.bin`） |
 
 ***
 
