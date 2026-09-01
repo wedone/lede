@@ -244,7 +244,7 @@ breed> flash write 0x50000 0x81000000 0x9A0000
 | `a3af70f4a` | 按钮救急模式（短按重启/长按5s救急/超长按10s重置）                                                                  |
 | `63318a9ec` | WIFI 灯"开机默认常亮"初版（`ucidef_set_led_default`）——**后经实测发现不可用**（见下条修正）                              |
 | `0d880aef7` | 文档记录 WIFI 灯常亮实现（AR922x LED 实测结论）                                                              |
-| 本次提交        | **WIFI 灯常亮修正**（DTS GPIO3/4 极性 LOW→HIGH + trigger 改 `default-on`）+ **救急模式 IP 统一为 192.168.3.1** |
+| `7836e513f` | **WIFI 灯常亮修正**（DTS GPIO3/4 极性 LOW→HIGH + trigger 改 `default-on`）+ **救急模式 IP 统一为 192.168.3.1** |
 
 ***
 
