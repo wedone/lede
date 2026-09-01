@@ -93,8 +93,9 @@
 &pcie0 {
 	status = "okay";
 
-	/* MAC 待 bootloader 路线确定后从 hwinfo@0x1c 启用,方案(注释保留):
-	 * nvmem-cells = <&macaddr_hwinfo_1c>;
+	/* 无线卡使用卡内 EEPROM OTP MAC(实测跨重启稳定,如 00:1b:b1 / 90:a4:de)。
+	 * 如需统一为 hwinfo 基址派生,可启用(注释保留):
+	 * nvmem-cells = <&macaddr_hwinfo_0>;
 	 * nvmem-cell-names = "mac-address";
 	 * mac-address-increment = <1>;
 	 */
@@ -135,6 +136,15 @@
 
 &eth0 {
 	status = "okay";
+
+	/*
+	 * MAC 取自 hwinfo 分区偏移 0x0(实测 2026-09-02):
+	 * 00:27:1d:20:03:6f(00271D = Comba 京信 OUI)。
+	 * 原 macaddr@1c 位置实测是 ASCII 序列号, 且未绑定 eth0,
+	 * 导致每次上电 LAN MAC 随机(瘦 AP 模式 DHCP IP 漂移)。
+	 */
+	nvmem-cells = <&macaddr_hwinfo_0>;
+	nvmem-cell-names = "mac-address";
 
 	/* 与 ar7100.dtsi 默认值相同,显式声明以文档化 */
 	pll-data = <0x00110000 0x00001099 0x00991099>;
@@ -184,9 +194,10 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					macaddr_hwinfo_1c: macaddr@1c {
+					/* 真实 MAC 在偏移 0x0(Comba OUI 00:27:1d), 0x1c 处是 ASCII 序列号 */
+					macaddr_hwinfo_0: macaddr@0 {
 						compatible = "mac-base";
-						reg = <0x1c 0x6>;
+						reg = <0x0 0x6>;
 						#nvmem-cell-cells = <1>;
 					};
 				};
