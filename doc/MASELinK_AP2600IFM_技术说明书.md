@@ -60,17 +60,19 @@
 
 通过 GPIO 逐个闪烁实测确认，本板正面/背板共有 **3 颗可由系统控制的 LED**（另有 1 颗 POWER 灯为物理供电指示，不受系统控制；余 GPIO 无物理 LED）。
 
-| LED 位置 | 元件丝印 | 功能丝印    | GPIO  | DTS 节点         | 系统行为                                    |
-| ------ | ---- | ------- | ----- | -------------- | --------------------------------------- |
-| 背板第二颗  | LED2 | **WPS** | GPIO5 | `green:rf2top` | **网络活动灯**：eth0 收发闪烁（WPS 原功能废弃，复用为网络指示灯） |
-| 背板第三颗  | LED3 | 2.4G    | GPIO3 | `green:d24top` | 无线活动灯：2.4G 收发闪烁（`phy0tpt`）              |
-| 背板第四颗  | LED4 | 5G      | GPIO4 | `green:rf2`    | 无线活动灯：5G 收发闪烁（`phy1tpt`）                |
-| （不受控）  | LED1 | POWER   | —     | 无              | 硬件供电指示，常亮（若有）                           |
+| LED 位置 | 元件丝印 | 功能丝印    | GPIO  | DTS 节点         | 系统行为                                        |
+| ------ | ---- | ------- | ----- | -------------- | ------------------------------------------- |
+| 背板第二颗  | LED2 | **WPS** | GPIO5 | `green:rf2top` | **网络活动灯**：eth0 收发闪烁（WPS 原功能废弃，复用为网络指示灯）     |
+| 背板第三颗  | LED3 | 2.4G    | GPIO3 | `green:d24top` | **常亮**：开机默认点亮（`trigger=none` + `default=1`） |
+| 背板第四颗  | LED4 | 5G      | GPIO4 | `green:rf2`    | **常亮**：开机默认点亮（`trigger=none` + `default=1`） |
+| （不受控）  | LED1 | POWER   | —     | 无              | 硬件供电指示，常亮（若有）                               |
 
 **未使用的 GPIO（无物理 LED，DTS 保留但不配置）**：GPIO0/2/7。
 
 > 配置来源：`target/linux/ath79/generic/base-files/etc/board.d/01_leds` 的 `maselink,ap2600ifm` 段。
 > 手动改灯：`echo 1 > /sys/class/leds/green:rf2top/brightness`；改 trigger 用 `/sys/class/leds/green:rf2top/trigger`。
+>
+> **实测结论（2026-09-01，AR922x）**：实现"开机默认常亮"只能用 `trigger=none` + `default=1`（经 `ucidef_set_led_default`）。`phy0tpt`/`phy1tpt`（收发闪烁）会**覆盖** `default` 使空闲即灭；`phy0radio`/`phy0assoc` 在 AR922x 上实测**不生效**（radio 开启时灯仍不亮）。若需"常亮+活动闪烁"组合在本硬件上无法用单一 trigger 实现。
 
 ***
 
@@ -231,11 +233,12 @@ breed> flash write 0x50000 0x81000000 0x9A0000
 
 ## 八、版本记录（固件相关）
 
-| Commit      | 内容                                    |
-| ----------- | ------------------------------------- |
-| `3385b01c3` | A 方案：argon 主题、剔除路由包、默认 IP 192.168.3.1 |
-| `a2b246a46` | LED 实测映射（WPS→网络活动灯, 2.4G/5G 无线灯）      |
-| `a3af70f4a` | 按钮救急模式（短按重启/长按5s救急/超长按10s重置）          |
+| Commit      | 内容                                                                  |
+| ----------- | ------------------------------------------------------------------- |
+| `3385b01c3` | A 方案：argon 主题、剔除路由包、默认 IP 192.168.3.1                               |
+| `a2b246a46` | LED 实测映射（WPS→网络活动灯, 2.4G/5G 无线灯）                                    |
+| `a3af70f4a` | 按钮救急模式（短按重启/长按5s救急/超长按10s重置）                                        |
+| `63318a9ec` | WIFI 灯改为**开机默认常亮**（`ucidef_set_led_default`，trigger=none+default=1） |
 
 ***
 
