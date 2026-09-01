@@ -51,6 +51,13 @@ EOF
 
     # 4. 打标记
     touch "$RESCUE_MARK"
+
+    # 5. 闪断 eth0 链路: 电脑网线通常已插着, 不会主动重发 DHCP,
+    #    拔链路重连可强制其对新的 dnsmasq 重新发起 DHCP 请求。
+    ip link set dev eth0 down
+    sleep 1
+    ip link set dev eth0 up
+
     echo "rescue mode ACTIVE: http://$RESCUE_IP (DHCP .100-.200)"
 }
 

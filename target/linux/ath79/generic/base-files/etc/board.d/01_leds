@@ -255,14 +255,15 @@ maselink,ap2600ifm)
 	#   GPIO4(green:rf2)    = 5G 灯   元件 LED4
 	#   GPIO5(green:rf2top) = WPS 灯 元件 LED2 -> 改为网络活动灯(eth0 tx/rx)
 	#   GPIO0/2/7 无物理 LED, 不配置
-	# 2.4G/5G 无线灯: 实测 trigger=default-on 方能"空闲常亮"
-	#   (phy0radio/phy0assoc 在 AR922x 上实测不亮; phy0tpt 会覆盖 default 导致空闲即灭)
-	# 2026-09-01 极性与机制修正:
-	#   - DTS GPIO3/4 极性 LOW->HIGH(实测高电平点亮), 否则 default=1 输出的反极性熄灭灯
-	#   - 触发用 default-on(内核指针), 替代 ucidef_set_led_default 的 default=1+无 trigger:
-	#     原方案开机先亮后被 /etc/init.d/led 的 echo none 覆盖熄灭(启动亮几秒后常灭)
-	ucidef_set_led_wlan "wlan2g" "WLAN2G" "green:d24top" "default-on"
-	ucidef_set_led_wlan "wlan5g" "WLAN5G" "green:rf2" "default-on"
+	# 2.4G/5G 无线灯: 预期"闲时常亮 + 有数据闪烁"
+	# 2026-09-02 方案重启: 改用 netdev trigger 组合模式 "link tx rx":
+	#   - link: wlan 接口 UP(hostapd 启用)时点亮 -> 闲时常亮, radio 关闭时熄灭
+	#   - tx rx: 有流量时闪烁 -> 活动指示
+	# (此前实测排除项: phy0radio/phy0assoc 在 AR922x 不生效; phy0tpt 空闲即灭;
+	#  default-on 常亮但完全不闪; netdev 的 link 模式是唯一能同时满足两诉求的内核 trigger)
+	# 2026-09-01 极性修正: DTS GPIO3/4 为 GPIO_ACTIVE_HIGH(实测高电平点亮)
+	ucidef_set_led_netdev "wlan2g" "WLAN2G" "green:d24top" "wlan0" "link tx rx"
+	ucidef_set_led_netdev "wlan5g" "WLAN5G" "green:rf2" "wlan1" "link tx rx"
 	ucidef_set_led_netdev "lan" "LAN" "green:rf2top" "eth0" "tx rx"
 	;;
 meraki,mr12|\
