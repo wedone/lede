@@ -1,8 +1,8 @@
 #!/bin/sh
 # ap2600ifm 救急模式: 长按物理按钮(约5s)后, 在 LAN 上临时增加管理通道:
-#   - 辅助 IP  192.168.9.1/24 (叠加在 br-lan, 不改变原网络配置)
-#   - 临时 DHCP 192.168.9.100-200 (独立 dnsmasq 实例)
-# 电脑接 LAN 自动获取 192.168.9.x 后, 浏览器访问 http://192.168.9.1 即可进管理页。
+#   - 管理 IP  192.168.3.1/24 (与主 LAN IP 一致; 主 IP 存在则跳过叠加, 不存在才补设)
+#   - 临时 DHCP 192.168.3.100-200 (独立 dnsmasq 实例)
+# 电脑接 LAN 自动获取 192.168.3.x 后, 浏览器访问 http://192.168.3.1 即可进管理页。
 #
 # 纯内存态: 不写 flash/overlay, 重启自动消失, 不影响正常配置。
 # 用法: ap2600ifm-rescue {start|stop|status}
@@ -12,21 +12,27 @@
 #   长按(按住5s) = 本救急模式(临时 dhcp 管理通道, 纯内存态)
 #   超长按(>=10s)= factory reset(仅 AP2600IFM; 其他 ath79 设备保持默认 failsafe/reset)
 
-RESCUE_IP="192.168.9.1"
+RESCUE_IP="192.168.3.1"
 RESCUE_MASK="24"
-RESCUE_DHCP="192.168.9.100,192.168.9.200,255.255.255.0,12h"
+RESCUE_DHCP="192.168.3.100,192.168.3.200,255.255.255.0,12h"
 RESCUE_CONF="/tmp/rescue-dnsmasq.conf"
 RESCUE_MARK="/tmp/rescue-mode"
+RESCUE_ADDED="/tmp/rescue-added-ip"
 BR="br-lan"
 
 start() {
     # 已在救急模式则直接退出
     [ -f "$RESCUE_MARK" ] && { echo "rescue already active"; exit 0; }
 
-    # 1. 添加辅助 IP (幂等; 若已存在会返回错误但无碍)
-    ip addr add "$RESCUE_IP/${RESCUE_MASK}" dev "$BR" 2>/dev/null
+    # 1. 主 LAN IP 已存在(192.168.3.1)则跳过叠加, 避免与主配置冲突;
+    #    主 IP 缺失(配置损坏)时才补设, 保证管理通道可用。
+    if ip -4 addr show dev "$BR" | grep -q " inet ${RESCUE_IP}/"; then
+        echo "main IP ${RESCUE_IP} present, skip add"
+    else
+        ip addr add "$RESCUE_IP/${RESCUE_MASK}" dev "$BR" 2>/dev/null && touch "$RESCUE_ADDED"
+    fi
 
-    # 2. 写临时 dnsmasq 配置: 仅服务 192.168.9.x 子网
+    # 2. 写临时 dnsmasq 配置: 仅服务 192.168.3.x 子网
     cat > "$RESCUE_CONF" <<EOF
 interface=$BR
 bind-interfaces
@@ -51,7 +57,9 @@ EOF
 stop() {
     [ -f /tmp/rescue-dnsmasq.pid ] && kill "$(cat /tmp/rescue-dnsmasq.pid)" 2>/dev/null
     rm -f /tmp/rescue-dnsmasq.pid "$RESCUE_CONF" "$RESCUE_MARK"
-    ip addr del "$RESCUE_IP/${RESCUE_MASK}" dev "$BR" 2>/dev/null
+    # 仅删除本模式补设的 IP, 避免误删主 LAN IP
+    [ -f "$RESCUE_ADDED" ] && ip addr del "$RESCUE_IP/${RESCUE_MASK}" dev "$BR" 2>/dev/null
+    rm -f "$RESCUE_ADDED"
     echo "rescue mode stopped"
 }
 

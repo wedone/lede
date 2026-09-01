@@ -58,12 +58,14 @@
 
 		d24top {
 			label = "green:d24top";
-			gpios = <&gpio 3 GPIO_ACTIVE_LOW>;
+			/* GPIO3 实测高电平点亮（2026-09-01），修正 LOWER -> HIGH */
+			gpios = <&gpio 3 GPIO_ACTIVE_HIGH>;
 		};
 
 		rf2 {
 			label = "green:rf2";
-			gpios = <&gpio 4 GPIO_ACTIVE_LOW>;
+			/* GPIO4 实测高电平点亮（2026-09-01），修正 LOWER -> HIGH */
+			gpios = <&gpio 4 GPIO_ACTIVE_HIGH>;
 		};
 
 		rf2top {
