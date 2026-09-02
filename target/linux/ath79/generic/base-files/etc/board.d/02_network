@@ -515,6 +515,12 @@ ath79_setup_interfaces()
 		ucidef_add_switch "switch0" \
 			"0@eth0" "3:lan:1" "4:lan:2"
 		;;
+	maselink,ap2600ifm)
+		# 纯瘦 AP: 单 eth0, 无交换机芯片。仅生成 lan, 源头不生成 wan/wan6,
+		# 避免"生成后再删"在升级/恢复固件时残留无效接口。
+		# LAN MAC 已由 DTS nvmem-cells(macaddr_hwinfo_0) 绑定, 无需在此设置。
+		ucidef_set_interface_lan "eth0"
+		;;
 	*)
 		ucidef_set_interfaces_lan_wan "eth0" "eth1"
 		;;
