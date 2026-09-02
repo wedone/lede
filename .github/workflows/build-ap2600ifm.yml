@@ -72,10 +72,25 @@ jobs:
         run: |
           make -j$(nproc) IGNORE_ERRORS=m || make -j1 IGNORE_ERRORS=m V=s
 
+      # 复制一份带 commit 短 hash 的固件 + 导出 SHA8，避免固定文件名导致误用旧产物
+      - name: Tag firmware with commit hash
+        run: |
+          SHA8=$(git rev-parse --short=8 HEAD)
+          echo "SHA8=${SHA8}" >> "$GITHUB_ENV"
+          cd bin/targets/ath79/generic
+          for f in openwrt-ath79-generic-maselink_ap2600ifm-*squashfs-sysupgrade.bin \
+                   openwrt-ath79-generic-maselink_ap2600ifm-*initramfs-kernel.bin; do
+            [ -f "$f" ] || continue
+            base="${f%.bin}"
+            cp "$f" "${base}-${SHA8}.bin"
+          done
+          echo "=== tagged files ==="
+          ls -l *-${SHA8}*.bin
+
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: ap2600ifm-firmware
+          name: ap2600ifm-firmware-${{ env.SHA8 }}
           path: bin/targets/ath79/generic/
 
       - name: Upload failure logs (on error)
