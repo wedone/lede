@@ -189,17 +189,19 @@
 				reg = <0xfe0000 0x10000>;
 				read-only;
 
-				nvmem-layout {
-					compatible = "fixed-layout";
-					#address-cells = <1>;
-					#size-cells = <1>;
+				/*
+				 * 用 nvmem-cells 旧式写法(与官方 AP-105 一致, 6.6 ath79 全系如此)。
+				 * 不能用 nvmem-layout/fixed-layout + mac-base: 需要
+				 * CONFIG_NVMEM_LAYOUT_FIXED, 而 ath79 config-6.6 未开,
+				 * 会导致 cell 解析失败(#nvmem-cell-cells = 1 found 0) -> MAC 随机。
+				 * 真实 MAC 在偏移 0x0(Comba OUI 00:27:1d), 0x1c 处是 ASCII 序列号。
+				 */
+				compatible = "nvmem-cells";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-					/* 真实 MAC 在偏移 0x0(Comba OUI 00:27:1d), 0x1c 处是 ASCII 序列号 */
-					macaddr_hwinfo_0: macaddr@0 {
-						compatible = "mac-base";
-						reg = <0x0 0x6>;
-						#nvmem-cell-cells = <1>;
-					};
+				macaddr_hwinfo_0: macaddr@0 {
+					reg = <0x0 0x6>;
 				};
 			};
 
