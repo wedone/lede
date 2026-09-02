@@ -1521,10 +1521,12 @@ define Device/maselink_ap2600ifm
   DEVICE_VENDOR := MASELinK
   DEVICE_MODEL := AP2600IFM
   IMAGE_SIZE := 15872k
-  DEVICE_PACKAGES := kmod-usb2
-  # 纯 AP 精简：剔除 include/target.mk DEFAULT_PACKAGES.router 中本设备用不到的
+  # 纯 AP 精简：不含 USB 功能 (kmod-usb2 已剔除, 板子无 USB 硬件需求),
+  # 并剔除 include/target.mk DEFAULT_PACKAGES.router 中本设备用不到的
   # 路由/下载/统计类包。保留 AP 必需项：dnsmasq(DHCP/DNS)、firewall+iptables、
   # IPv6 全家(odhcpd/odhcp6c/ip6tables/nat6)、ipset、block-mount。
+  # 瘦 AP 桥接无外网/NAT 需求：一并剔除 IPv6 NAT(kmod-ipt-nat6) 与 raw 表。
+  # 无线漫游 802.11k/v/r 需要 full hostapd：wpad-basic-mbedtls -> wpad-mbedtls。
   # 用 '-包名' 语法在设备级剔除，不影响其他 ath79 设备。
   DEVICE_PACKAGES += \
 	-ddns-scripts_dnspod -ddns-scripts_aliyun -luci-app-ddns \
@@ -1535,7 +1537,9 @@ define Device/maselink_ap2600ifm
 	-luci-app-turboacc -luci-app-wol -etherwake -curl \
 	-coremark -ppp -ppp-mod-pppoe -luci-proto-ppp -pptpd \
 	-iptables-mod-tproxy -iptables-mod-extra \
-	-kmod-nf-nathelper -kmod-nf-nathelper-extra -kmod-tun
+	-kmod-nf-nathelper -kmod-nf-nathelper-extra -kmod-tun \
+	-kmod-ipt-nat6 -kmod-ipt-raw \
+	-wpad-basic-mbedtls wpad-mbedtls
   # 引导：Breed (ATH-SDK-16MB 布局, 固件 0x50000 起)。
   # 回落 ath79 默认 KERNEL (kernel-bin | append-dtb | lzma | uImage lzma),
   # 即标准 uImage (magic 0x27051956, load 0x80060000)。Breed 自带 LZMA 解压,

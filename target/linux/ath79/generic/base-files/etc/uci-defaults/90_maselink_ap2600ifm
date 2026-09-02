@@ -1,15 +1,38 @@
 #!/bin/sh
-# MASELinK AP2600IFM: 默认 LAN IP 改为 192.168.3.1/24, 避免与光猫默认 192.168.1.1 冲突。
+# MASELinK AP2600IFM: 
+#   - 默认 LAN IP 改为 192.168.3.1/24, 避免与光猫默认 192.168.1.1 冲突;
+#   - 默认主机名改为 AP2600IFM (替代 config_generate 生成的 LEDE)。
 # 仅在首次启动(firstboot)时生效; 用户已保存的配置不会被覆盖。
-
-[ -z "$(uci get network.lan.ipaddr 2>/dev/null)" ] || [ "$(uci get network.lan.ipaddr 2>/dev/null)" = "192.168.1.1" ] || exit 0
 
 board="$(board_name)"
 case "$board" in
 	maselink,ap2600ifm)
-		uci set network.lan.ipaddr='192.168.3.1'
-		uci set network.lan.netmask='255.255.255.0'
-		uci commit network
+		# 默认主机名直接改为 AP2600IFM (替代 config_generate 生成的 LEDE)
+		uci set system.@system[0].hostname='AP2600IFM'
+		uci commit system
+
+		# 默认 LAN IP 192.168.3.1/24: 仅在仍是默认 192.168.1.1 (或未设置) 时写入
+		if [ -z "$(uci -q get network.lan.ipaddr)" ] || \
+		   [ "$(uci -q get network.lan.ipaddr)" = "192.168.1.1" ]; then
+			uci set network.lan.ipaddr='192.168.3.1'
+			uci set network.lan.netmask='255.255.255.0'
+			uci commit network
+		fi
+
+		# 默认开启 802.11k/11v/11r 无缝漫游 (wpad-mbedtls full 编译已含 11k/11v;
+		# hostapd.sh 对应参数: ieee80211k / bss_transition / ieee80211r+ft_psk_generate_local)
+		[ -s /etc/config/wireless ] || wifi config >/dev/null 2>&1
+		if [ -s /etc/config/wireless ]; then
+			for dev in $(uci -q show wireless | grep -oE '^wireless\.radio[0-9]+' | sort -u); do
+				uci -q batch <<EOF
+set $dev.ieee80211k='1'
+set $dev.bss_transition='1'
+set $dev.ieee80211r='1'
+set $dev.ft_psk_generate_local='1'
+EOF
+			done
+			uci commit wireless
+		fi
 		;;
 esac
 
