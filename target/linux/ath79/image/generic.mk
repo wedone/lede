@@ -1541,7 +1541,8 @@ define Device/maselink_ap2600ifm
 	-kmod-nf-nathelper -kmod-nf-nathelper-extra -kmod-tun \
 	-kmod-ipt-nat6 -kmod-ipt-raw \
 	-luci-app-firewall -firewall \
-	-wpad-basic-mbedtls wpad-mbedtls
+	-wpad-basic-mbedtls wpad-mbedtls \
+	+uhttpd +uhttpd-mod-ubus +uhttpd-mod-ucode
   # 引导：Breed (ATH-SDK-16MB 布局, 固件 0x50000 起)。
   # 回落 ath79 默认 KERNEL (kernel-bin | append-dtb | lzma | uImage lzma),
   # 即标准 uImage (magic 0x27051956, load 0x80060000)。Breed 自带 LZMA 解压,
