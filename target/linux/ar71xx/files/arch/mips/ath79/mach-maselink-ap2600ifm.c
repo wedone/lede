@@ -33,11 +33,12 @@
 #include "dev-spi.h"
 #include "dev-usb.h"
 #include "machtypes.h"
-#include "nvram.h"
 
 /* ap2600-ar71xx 移植说明(2026-09): 从 0759aaa96 时代移植到 4.14 基点。
  * MDIO 地址按 Breed 实测改为 @1(IP1001), 与自研 ath79 版(pb42)对齐;
- * flash 分区不做代码内注册, 由 patch-cmdline 写入的 mtdparts 提供(见 legacy.mk). */
+ * flash 分区不做代码内注册, 由 patch-cmdline 写入的 mtdparts 提供(见 legacy.mk);
+ * MAC 不再读 NVRAM(0x1f040004, 已被 Breed 占用), 改读 hwinfo 分区
+ * (flash 0xfe0000, 偏移 0 处 6 字节), 与自研 ath79 版一致. */
 
 #define AP2600IFM_GPIO_LED_RF1          2
 #define AP2600IFM_GPIO_LED_RF1_TOP      7
@@ -51,8 +52,7 @@
 #define AP2600IFM_KEYS_POLL_INTERVAL    20      /* msecs */
 #define AP2600IFM_KEYS_DEBOUNCE_INTERVAL        (3 * AP2600IFM_KEYS_POLL_INTERVAL)
 
-#define AP2600IFM_NVRAM_ADDR                    0x1f040004
-#define AP2600IFM_NVRAM_SIZE                    0x3fffc
+#define AP2600IFM_HWINFO_ADDR                    0x1ffe0000
 
 static struct gpio_led ap2600ifm_leds_gpio[] __initdata = {
         {
@@ -105,15 +105,12 @@ static struct mdio_board_info ap2600ifm_mdio0_info[] = {
         },
 };
 
-static void ap2600ifm_get_mac(const char *name, char *mac)
+static void __init ap2600ifm_get_mac(char *mac)
 {
-        u8 *nvram = (u8 *) KSEG1ADDR(AP2600IFM_NVRAM_ADDR);
-        int err;
+        u8 *hwinfo = (u8 *) KSEG1ADDR(AP2600IFM_HWINFO_ADDR);
 
-        err = ath79_nvram_parse_mac_addr(nvram, AP2600IFM_NVRAM_SIZE,
-                                         name, mac);
-        if (err)
-                pr_err("%s not found in environment variables\n", name);
+        /* hwinfo 分区(flash 0xfe0000)偏移 0 处为 6 字节 MAC, 无 offset 增量 */
+        ath79_init_mac(mac, hwinfo, 0);
 }
 
 static void __init ap2600ifm_setup(void)
@@ -133,7 +130,7 @@ static void __init ap2600ifm_setup(void)
         mdiobus_register_board_info(ap2600ifm_mdio0_info,
                                     ARRAY_SIZE(ap2600ifm_mdio0_info));
 
-        ap2600ifm_get_mac("macaddr=", ath79_eth0_data.mac_addr);
+        ap2600ifm_get_mac(ath79_eth0_data.mac_addr);
 
         ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
         ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
