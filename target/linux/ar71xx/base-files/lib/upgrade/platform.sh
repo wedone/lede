@@ -414,6 +414,7 @@ platform_check_image() {
 	el-mini|\
 	gl-inet|\
 	lan-turtle|\
+	maselink-ap2600ifm|\
 	mc-mac1200r|\
 	minibox-v1|\
 	minibox-v3.2|\

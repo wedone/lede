@@ -281,6 +281,9 @@ get_status_led() {
 	ls-sr71)
 		status_led="ubnt:green:d22"
 		;;
+	maselink-ap2600ifm)
+		status_led="ap2600ifm:green:d24"
+		;;
 	mc-mac1200r)
 		status_led="mercury:green:system"
 		;;

@@ -115,6 +115,11 @@ define LegacyDevice/AP152_16M
 endef
 LEGACY_DEVICES += AP152_16M
 
+define LegacyDevice/AP2600IFM
+  DEVICE_TITLE := Comba MASELink AP2600-IFM
+endef
+LEGACY_DEVICES += AP2600IFM
+
 define LegacyDevice/BXU2000N2
   DEVICE_TITLE := BHU BXU2000n-2
   DEVICE_PACKAGES := kmod-usb2 kmod-usb-storage

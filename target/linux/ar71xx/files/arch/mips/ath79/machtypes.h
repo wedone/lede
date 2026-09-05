@@ -155,6 +155,7 @@ enum ath79_mach_type {
 	ATH79_MACH_KOALA,			/* OCEDO Koala */
 	ATH79_MACH_LAN_TURTLE,			/* Hak5 LAN Turtle */
 	ATH79_MACH_LIMA,			/* 8devices Lima */
+	ATH79_MACH_MASELINK_AP2600IFM,		/* Comba MASELink AP2600-IFM */
 	ATH79_MACH_MC_MAC1200R,			/* MERCURY MAC1200R */
 	ATH79_MACH_MR12,			/* Cisco Meraki MR12 */
 	ATH79_MACH_MR16,			/* Cisco Meraki MR16 */

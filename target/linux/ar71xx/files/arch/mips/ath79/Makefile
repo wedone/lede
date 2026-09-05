@@ -153,6 +153,7 @@ obj-$(CONFIG_ATH79_MACH_JWAP230)		+= mach-jwap230.o
 obj-$(CONFIG_ATH79_MACH_KOALA)			+= mach-koala.o
 obj-$(CONFIG_ATH79_MACH_LAN_TURTLE)		+= mach-lan-turtle.o
 obj-$(CONFIG_ATH79_MACH_LIMA)			+= mach-lima.o
+obj-$(CONFIG_ATH79_MACH_MASELINK_AP2600IFM)	+= mach-maselink-ap2600ifm.o
 obj-$(CONFIG_ATH79_MACH_MC_MAC1200R)		+= mach-mc-mac1200r.o
 obj-$(CONFIG_ATH79_MACH_MR12)			+= mach-mr12.o
 obj-$(CONFIG_ATH79_MACH_MR16)			+= mach-mr16.o

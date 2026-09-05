@@ -1001,6 +1001,9 @@ ar71xx_board_detect() {
 	*"LS-SR71")
 		name="ls-sr71"
 		;;
+	*"MASELink AP2600-IFM")
+		name="maselink-ap2600ifm"
+		;;
 	*"MAC1200R")
 		name="mc-mac1200r"
 		;;
