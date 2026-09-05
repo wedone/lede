@@ -240,7 +240,9 @@ ap152_mtdlayout_16M=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,14528k(root
 # ap2600-ar71xx(2026-09): 对齐 Breed ATH-SDK-16MB 布局 (firmware@0x50000), 与原 0759aaa96 版 @0x80000 不同
 # kernel 必须从 0x50000 起(与 firmware 起点一致), 否则 Breed 刷写后 rootfs 偏移错位 0x30000 挂载失败
 # breed 分区 320k = 0x50000, 对应 ath79 DTS 的 u-boot 区(0x0-0x50000)
-maselink_ap2600ifm_mtdlayout=mtdparts=spi0.0:320k(breed)ro,1536k(kernel),14336k(rootfs),15872k@0x50000(firmware)
+# kernel 2048k: 实测 4.14 generic uImage-lzma = 1705234B > 1536k(1572864B), 1536k 会因超限不生成镜像
+# rootfs 相应 14336k->13824k, 且避免 jffs2 overlay 覆盖 hwinfo(0xfe0000)
+maselink_ap2600ifm_mtdlayout=mtdparts=spi0.0:320k(breed)ro,2048k(kernel),13824k(rootfs),15872k@0x50000(firmware)
 bxu2000n2_mtdlayout=mtdparts=spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,1408k(kernel),8448k(rootfs),6016k(user),64k(cfg),64k(oem),64k(art)ro
 cameo_ap81_mtdlayout=mtdparts=spi0.0:128k(u-boot)ro,64k(config)ro,3840k(firmware),64k(art)ro
 cameo_ap91_mtdlayout=mtdparts=spi0.0:192k(u-boot)ro,64k(nvram)ro,3712k(firmware),64k(mac)ro,64k(art)ro
