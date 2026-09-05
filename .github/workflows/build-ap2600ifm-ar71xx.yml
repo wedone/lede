@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ap2600-ar71xx
 
@@ -62,7 +62,7 @@ jobs:
           find bin/targets/ar71xx/generic/ -name "*ap2600*" -o -name "*maselink*" 2>/dev/null || true
 
       - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ar71xx-generic-firmware
           path: bin/targets/ar71xx/generic/
