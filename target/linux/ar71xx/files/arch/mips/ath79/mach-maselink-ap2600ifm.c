@@ -101,7 +101,7 @@ static struct gpio_keys_button ap2600ifm_gpio_keys[] __initdata = {
 static struct mdio_board_info ap2600ifm_mdio0_info[] = {
         {
                 .bus_id = "ag71xx-mdio.0",
-                .phy_addr = 1,
+                .mdio_addr = 1,
         },
 };
 
