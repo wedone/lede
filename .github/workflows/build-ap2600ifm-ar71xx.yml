@@ -52,9 +52,14 @@ jobs:
 
       - name: Generate configuration (ar71xx/generic)
         run: |
+          # 无 BUILDBOT 时 Target Profile choice 默认选第一个 profile(A60),
+          # 必须显式启用 MULTI_PROFILE + 指定设备, 否则不生成 AP2600IFM 镜像
           echo "CONFIG_TARGET_ar71xx=y" > .config
           echo "CONFIG_TARGET_ar71xx_generic=y" >> .config
+          echo "CONFIG_TARGET_MULTI_PROFILE=y" >> .config
+          echo "CONFIG_TARGET_DEVICE_ar71xx_generic_DEVICE_AP2600IFM=y" >> .config
           make defconfig
+          grep -E "CONFIG_TARGET_(MULTI_PROFILE|DEVICE_ar71xx_generic_DEVICE_AP2600IFM)" .config
 
       - name: Make download
         run: |
