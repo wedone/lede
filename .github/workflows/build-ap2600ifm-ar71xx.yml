@@ -19,11 +19,20 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ap2600-ar71xx
+          fetch-depth: 0
 
       - name: Install dependencies
         run: |
           sudo -E apt-get update
-          sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses-dev libz-dev patch python3 unzip zlib1g-dev libc6-dev-i386 subversion flex uglifyjs gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler antlr3 gperf swig file rsync wget curl
+          sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses-dev libz-dev patch python3 unzip zlib1g-dev libc6-dev-i386 subversion flex uglifyjs gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler antlr3 gperf swig file rsync wget curl gcc-10 g++-10
+          # 用 gcc-10/g++-10 (4.14 时代工具链匹配), 避免 gcc-11/12 差异
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+          sudo update-alternatives --set gcc /usr/bin/gcc-10
+          sudo update-alternatives --set g++ /usr/bin/g++-10
+          gcc --version | head -1
+          g++ --version | head -1
+          python3 --version
           sudo -E apt-get -y autoremove --purge
           sudo -E apt-get clean
 
