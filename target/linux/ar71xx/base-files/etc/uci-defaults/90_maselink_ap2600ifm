@@ -12,6 +12,11 @@ case "$board" in
                 uci set system.@system[0].hostname='AP2600IFM'
                 uci commit system
 
+                # 默认主题 luci-theme-design (仅此一个用户主题; luci-theme-bootstrap 已剔除)
+                uci set luci.themes.Design='/luci-static/design'
+                uci set luci.main.mediaurlbase='/luci-static/design'
+                uci commit luci
+
                 # 默认 LAN IP 192.168.3.1/24: 仅在仍是默认 192.168.1.1 (或未设置) 时写入
                 if [ -z "$(uci -q get network.lan.ipaddr)" ] || \
                    [ "$(uci -q get network.lan.ipaddr)" = "192.168.1.1" ]; then

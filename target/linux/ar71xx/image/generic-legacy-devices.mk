@@ -117,6 +117,28 @@ LEGACY_DEVICES += AP152_16M
 
 define LegacyDevice/AP2600IFM
   DEVICE_TITLE := Comba MASELink AP2600-IFM
+  # 瘦AP精简(2026-09, AP2600IFM_瘦AP优化与ar71xx同步_需求清单):
+  #   - 剔除路由/拨号/存储/监控类组件(仅本设备, 不影响同分支其他设备)
+  #   - 不依赖 luci 聚合包(uhttpd/luci-mod-admin-full 等显式补回)
+  #   - 无线后端换 wpad(full-internal, 含 11k/11v/11r), 替换默认 wpad-basic
+  #   - 中文(B1): 显式装入 luci-base/luci-app-opkg 的 zh-cn 翻译包
+  #     (luci.mk 翻译包默认由 LUCI_LANG 配置驱动, 无菜单勾选时不会自动带入)
+  #   - 主题(B2): 仅 luci-theme-design, 剔除 luci-theme-bootstrap
+  #   - IPv6 基础设施: odhcpd-ipv6only + odhcp6c + ip6tables (保留底线)
+  DEVICE_PACKAGES := \
+	-luci -luci-theme-bootstrap -luci-app-firewall -luci-proto-ppp \
+	-luci-app-ddns -luci-app-upnp -luci-app-autoreboot -luci-app-webadmin \
+	-luci-app-filetransfer -luci-app-vsftpd -luci-app-ssr-plus -luci-app-unblockmusic \
+	-luci-app-arpbind -luci-app-vlmcsd -luci-app-wol -luci-app-ramfree \
+	-luci-app-sfe -luci-app-nlbwmon -luci-app-accesscontrol -luci-app-cpufreq \
+	-ddns-scripts_aliyun -ddns-scripts_dnspod \
+	-firewall -ppp -ppp-mod-pppoe -kmod-nf-nathelper -kmod-nf-nathelper-extra \
+	-kmod-ipt-raw -iptables -block-mount -coremark \
+	-wpad-basic \
+	uhttpd uhttpd-mod-ubus luci-base luci-compat luci-mod-admin-full \
+	luci-app-opkg luci-proto-ipv6 luci-theme-design \
+	luci-i18n-luci-base-zh-cn luci-i18n-luci-app-opkg-zh-cn \
+	wpad odhcpd-ipv6only odhcp6c ip6tables
 endef
 LEGACY_DEVICES += AP2600IFM
 
