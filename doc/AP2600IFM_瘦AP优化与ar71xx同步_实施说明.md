@@ -36,6 +36,7 @@
 | 下载/服务器 | `-vsftpd(luci-app-vsftpd) -luci-app-vlmcsd -luci-app-wol -ddns(luci-app-ddns、ddns-scripts_aliyun/dnspod) -luci-app-ssr-plus -luci-app-unblockmusic` |
 | 监控/统计 | `-luci-app-nlbwmon -luci-app-accesscontrol -luci-app-autoreboot -luci-app-filetransfer -luci-app-arpbind -luci-app-sfe -luci-app-ramfree -luci-app-cpufreq -luci-app-webadmin -coremark` |
 | 存储 | `-block-mount`（板子无 USB/存储硬件） |
+| 默认配置包 | `-default-settings`（DEPENDS=`+luci +luci-compat`，不剔会经 opkg 依赖拉回 luci 聚合包与 bootstrap 主题，直接破坏 B1/B2 与 A1；其关键默认项已在设备级脚本补位，见 A3） |
 | 主题 | `-luci-theme-bootstrap`（见 B2） |
 | 聚合包 | `-luci`（其内 app/主题/proto 一律不收，改为显式补必需件） |
 
@@ -60,7 +61,12 @@
 - LAN IP=192.168.3.1/24
 - 无线漫游全面开启：全部 radio 写 `ieee80211k=1`、`bss_transition=1`（11v）、`ieee80211r=1` + `ft_psk_generate_local=1`（11r PSK 本地生成）
 - 默认主题 mediaurlbase=`/luci-static/design`（B2）
-- 时区/语言：`default-settings`（CST-8 / zh_cn）原有
+- 时区/语言：原由 `default-settings` 提供（CST-8 / zh_cn），本次剔除该包后**在 90_maselink 内补位**其关键默认项，防回归：
+  - `luci.main.lang=zh_cn`（B1 默认语言，等效原 zzz-default-settings）
+  - `system.@system[0].timezone=CST-8` + `zonename=Asia/Shanghai`
+  - root 空密码行替换为 `password` 的 hash（只动空密码行，不覆盖已设密码；SSH/WebUI 默认凭据 root/password 与原有固件一致）
+  - 无线默认启用：删除 mac80211.sh 生成 wireless 时写入的 radio `disabled`（并清掉已生成配置中的 `option disabled`），否则出厂无线默认关闭
+  - `/usr/bin/ip` 软链、opkg 源切腾讯云镜像、dnsmasq 日志静音（对齐原 zzz 行为）
 
 ### A4. 引导与稳定性回归项
 
@@ -75,6 +81,9 @@
 3. **内核 IPv6**：lede 2021 全 target 默认关 IPv6，需平台级 config 显式开启（已做，仅 ar71xx 平台）。
 4. **mac80211.sh 无漫游键**：旧版脚本不直接读 `ieee80211k` 等键，但 netifd 会把 wifi-iface 的 uci option 全量透传为 json，由 hostapd.sh（已含 11k/11v/11r 处理）读取，无需改脚本。
 5. **luci-app-opkg 保留**：非需求明确排除项，体积小、便于后期维护安装组件。
+6. **hostapd-full.config 补 CONFIG_IEEE80211K=y**（2026-09 代码评审发现）：lede 锁仓的 `wpad`（full-internal）用 `files/hostapd-full.config`，其中 11r/WNM 已开但 **11k(RRM) 未开**；而 hostapd.sh 在 `ieee80211k=1` 时默认追加 `rrm_neighbor_report=1`/`rrm_beacon_report=1`（受 `CONFIG_IEEE80211K` 门控），未编译时 hostapd 视其为未知配置项而**拒绝启动 BSS** → 漫游开启后 AP 反而起不来。已显式补开。
+7. **luci-theme-design/header.htm 移除 `util.ubus()` 调用**（2026-09 代码评审发现）：该行调用的 `luci.util.ubus` 在 2021-06 锁仓（19.07 系）中不存在（ubus 是独立模块 `luci.util.ubus`），渲染会直接 error；且其返回值立刻被下一行覆盖，属冗余代码，已删除。其余模板 API（`media`/`resource`/`disp.context`/`luci.model.uci`/`ver.luciversion`/`luci.i18n.context.lang`）均为老 Lua LuCI 标准接口，核验通过。
+8. **default-settings 剔除是前提而非可选项**：其 Makefile `DEPENDS:=+luci-base +luci +luci-compat`，只要包在列表中，opkg 安装必拉回 luci 聚合 → bootstrap 主题/ppp/firewall 全部回归，B2/A1 不可达。故剔除后关键配置按 A3 补位到设备级。
 
 ## 四、验证计划（CI 构建后）
 

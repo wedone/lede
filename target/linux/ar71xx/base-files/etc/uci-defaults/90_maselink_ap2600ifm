@@ -10,11 +10,16 @@ case "$board" in
         maselink-ap2600ifm)
                 # 默认主机名直接改为 AP2600IFM (替代 config_generate 生成的 LEDE)
                 uci set system.@system[0].hostname='AP2600IFM'
+                # 默认时区 CST-8 (default-settings 包已剔除, 补位其 zzz-default-settings 行为)
+                uci set system.@system[0].timezone='CST-8'
+                uci set system.@system[0].zonename='Asia/Shanghai'
                 uci commit system
 
                 # 默认主题 luci-theme-design (仅此一个用户主题; luci-theme-bootstrap 已剔除)
                 uci set luci.themes.Design='/luci-static/design'
                 uci set luci.main.mediaurlbase='/luci-static/design'
+                # B1: 默认语言 zh_cn (default-settings 包已剔除, 补位)
+                uci set luci.main.lang='zh_cn'
                 uci commit luci
 
                 # 默认 LAN IP 192.168.3.1/24: 仅在仍是默认 192.168.1.1 (或未设置) 时写入
@@ -24,6 +29,10 @@ case "$board" in
                         uci set network.lan.netmask='255.255.255.0'
                         uci commit network
                 fi
+
+                # 无线默认启用 (default-settings 包已剔除, 补位: 移除 radio 默认 disabled 行为)
+                sed -i '/set wireless.radio${devidx}.disabled/d' /lib/wifi/mac80211.sh
+                [ -s /etc/config/wireless ] && sed -i '/option disabled/d' /etc/config/wireless
 
                 # 默认开启 802.11k/11v/11r 无缝漫游 (与 ath79 版一致; 编译含 wpad full 时生效)
                 [ -s /etc/config/wireless ] || wifi config >/dev/null 2>&1
@@ -38,6 +47,21 @@ EOF
                         done
                         uci commit wireless
                 fi
+
+                # 默认 root 密码 password (default-settings 包已剔除, 补位; 仅替换空密码行, 不覆盖用户已设密码)
+                sed -i 's/root::0:0:99999:7:::/root:$1$V4UetPzk$CYXluq4wUazHjmCDBCqXF.:0:0:99999:7:::/' /etc/shadow
+
+                # 常用工具软链与 opkg 国内镜像源 (default-settings 包已剔除, 补位)
+                ln -sf /sbin/ip /usr/bin/ip
+                [ -f /etc/opkg/distfeeds.conf ] && {
+                        sed -i 's#http://downloads.openwrt.org#https://mirrors.cloud.tencent.com/lede#g' /etc/opkg/distfeeds.conf
+                        sed -i "s/# //g" /etc/opkg/distfeeds.conf
+                        sed -i '/openwrt_luci/ { s/snapshots/releases\/18.06.8/g; }' /etc/opkg/distfeeds.conf
+                }
+
+                # dnsmasq 日志静音 (default-settings 包已剔除, 补位)
+                sed -i '/log-facility/d' /etc/dnsmasq.conf
+                echo "log-facility=/dev/null" >> /etc/dnsmasq.conf
                 ;;
 esac
 

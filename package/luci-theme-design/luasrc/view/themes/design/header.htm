@@ -33,7 +33,6 @@
 	local uci = require 'luci.model.uci'.cursor()
 	local fs  = require "nixio.fs"
 
-	local boardinfo = util.ubus("system", "board")
 	local boardinfo={}
 	boardinfo.hostname=sys.hostname()
 	

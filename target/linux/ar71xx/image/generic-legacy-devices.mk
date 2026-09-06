@@ -127,6 +127,7 @@ define LegacyDevice/AP2600IFM
   #   - IPv6 基础设施: odhcpd-ipv6only + odhcp6c + ip6tables (保留底线)
   DEVICE_PACKAGES := \
 	-luci -luci-theme-bootstrap -luci-app-firewall -luci-proto-ppp \
+	-default-settings \
 	-luci-app-ddns -luci-app-upnp -luci-app-autoreboot -luci-app-webadmin \
 	-luci-app-filetransfer -luci-app-vsftpd -luci-app-ssr-plus -luci-app-unblockmusic \
 	-luci-app-arpbind -luci-app-vlmcsd -luci-app-wol -luci-app-ramfree \
