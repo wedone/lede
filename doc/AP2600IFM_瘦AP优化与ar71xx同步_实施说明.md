@@ -9,7 +9,7 @@
 ### B1. 中文支持 — 已实施
 
 - 中文翻译包：luci.mk（lede 2021-06 锁仓 `a78b74784`）按模块生成 `luci-i18n-<模块名>-zh-cn`，且其默认选中由 `CONFIG_LUCI_LANG_zh-cn`（tristate）驱动；**上次构建固件实测无任何 luci-i18n-\* 包**（menuconfig 未勾选翻译时不会自动带入）。
-- 处理：设备级 `DEVICE_PACKAGES` 显式装入 `luci-i18n-luci-base-zh-cn`（覆盖界面全部核心文案）与 `luci-i18n-luci-app-opkg-zh-cn`（软件包页）。luci-mod-admin-full/network/status/system 在锁仓版本无独立 po/（文案集中在 luci-base）。
+- 处理：设备级 `DEVICE_PACKAGES` 显式装入 `luci-i18n-luci-base-zh-cn`（覆盖界面全部核心文案）与 `luci-i18n-opkg-zh-cn`（软件包页）。luci-mod-admin-full/network/status/system 在锁仓版本无独立 po/（文案集中在 luci-base）。包名注意：luci.mk 生成 `luci-i18n-<BASENAME>-zh-cn`（basename 去掉 luci-<type>- 前缀）。
 - 默认语言：`package/lean/default-settings/zzz-default-settings` 原有 `uci set luci.main.lang=zh_cn`，无需改动。
 - 验收：首次登录即中文。
 

@@ -137,7 +137,7 @@ define LegacyDevice/AP2600IFM
 	-wpad-basic \
 	uhttpd uhttpd-mod-ubus luci-base luci-compat luci-mod-admin-full \
 	luci-app-opkg luci-proto-ipv6 luci-theme-design \
-	luci-i18n-luci-base-zh-cn luci-i18n-luci-app-opkg-zh-cn \
+	luci-i18n-luci-base-zh-cn luci-i18n-opkg-zh-cn \
 	wpad odhcpd-ipv6only odhcp6c ip6tables
 endef
 LEGACY_DEVICES += AP2600IFM
