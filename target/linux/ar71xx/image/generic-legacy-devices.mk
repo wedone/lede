@@ -123,7 +123,7 @@ define LegacyDevice/AP2600IFM
   #   - 无线后端换 wpad(full-internal, 含 11k/11v/11r), 替换默认 wpad-basic
   #   - 中文(B1): 显式装入 luci-base/luci-app-opkg 的 zh-cn 翻译包
   #     (luci.mk 翻译包默认由 LUCI_LANG 配置驱动, 无菜单勾选时不会自动带入)
-  #   - 主题(B2): 仅 luci-theme-design, 剔除 luci-theme-bootstrap
+  #   - 主题(B2): 使用 OpenWrt 官方默认 luci-theme-bootstrap (弃用 luci-theme-design)
   #   - IPv6 基础设施: odhcpd-ipv6only + odhcp6c + ip6tables (保留底线)
   DEVICE_PACKAGES := \
 	-luci -luci-theme-bootstrap -luci-app-firewall -luci-proto-ppp \
@@ -137,7 +137,7 @@ define LegacyDevice/AP2600IFM
 	-kmod-ipt-raw -iptables -block-mount -coremark \
 	-wpad-basic \
 	uhttpd uhttpd-mod-ubus luci-base luci-compat luci-mod-admin-full \
-	luci-app-opkg luci-proto-ipv6 luci-theme-design \
+	luci-app-opkg luci-proto-ipv6 luci-theme-bootstrap \
 	luci-i18n-luci-base-zh-cn luci-i18n-opkg-zh-cn \
 	wpad odhcpd-ipv6only odhcp6c ip6tables
 endef
