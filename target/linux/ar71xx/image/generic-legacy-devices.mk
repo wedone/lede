@@ -126,7 +126,7 @@ define LegacyDevice/AP2600IFM
   #   - 主题(B2): 使用 OpenWrt 官方默认 luci-theme-bootstrap (弃用 luci-theme-design)
   #   - IPv6 基础设施: odhcpd-ipv6only + odhcp6c + ip6tables (保留底线)
   DEVICE_PACKAGES := \
-	-luci -luci-theme-bootstrap -luci-app-firewall -luci-proto-ppp \
+	-luci -luci-app-firewall -luci-proto-ppp \
 	-default-settings \
 	-luci-app-ddns -luci-app-upnp -luci-app-autoreboot -luci-app-webadmin \
 	-luci-app-filetransfer -luci-app-vsftpd -luci-app-ssr-plus -luci-app-unblockmusic \
